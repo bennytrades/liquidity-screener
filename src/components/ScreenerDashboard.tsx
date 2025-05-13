@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { db } from "../firebaseConfig";
-import { collection, getDocs, query, orderBy } from "firebase/firestore";
+import { collection, query, orderBy, onSnapshot } from "firebase/firestore";
 
 type PairAlert = {
   id: string;
@@ -13,30 +13,26 @@ export default function ScreenerDashboard() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const q = query(collection(db, "webhooks"), orderBy("timestamp", "desc"));
-        const querySnapshot = await getDocs(q);
-        const fetchedAlerts: PairAlert[] = [];
+    const q = query(collection(db, "webhooks"), orderBy("timestamp", "desc"));
 
-        querySnapshot.forEach((doc) => {
-          const data = doc.data();
-          fetchedAlerts.push({
-            id: doc.id,
-            name: data.name,
-            level: data.level,
-          });
+    const unsubscribe = onSnapshot(q, (querySnapshot) => {
+      const fetchedAlerts: PairAlert[] = [];
+
+      querySnapshot.forEach((doc) => {
+        const data = doc.data();
+        fetchedAlerts.push({
+          id: doc.id,
+          name: data.name,
+          level: data.level,
         });
+      });
 
-        setAlerts(fetchedAlerts);
-      } catch (error) {
-        console.error("Error fetching data from Firestore:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
+      setAlerts(fetchedAlerts);
+      setLoading(false);
+    });
 
-    fetchData();
+    // Cleanup subscription on unmount
+    return () => unsubscribe();
   }, []);
 
   return (
