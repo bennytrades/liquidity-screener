@@ -14,7 +14,7 @@ export default function ScreenerDashboard() {
 
   useEffect(() => {
     const q = query(collection(db, "webhooks"), orderBy("timestamp", "desc"));
-
+    console.log("✅ FIREBASE PROJECT ID:", process.env.REACT_APP_FIREBASE_PROJECT_ID);
     const unsubscribe = onSnapshot(q, (querySnapshot) => {
       console.log("📡 Real-time update received. Docs count:", querySnapshot.size);
 
