@@ -1,6 +1,4 @@
 import React, { useState, useEffect } from "react";
-import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 
 type PairAlert = {
   name: string;
@@ -23,7 +21,7 @@ export default function ScreenerDashboard() {
   const [alerts, setAlerts] = useState<PairAlert[]>([]);
 
   useEffect(() => {
-    let raw = JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
+    const raw = JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
 
     const data: PairAlert[] = raw.map((item: any) =>
       typeof item === "string"
@@ -85,8 +83,18 @@ export default function ScreenerDashboard() {
       <div className="flex items-center justify-between mb-4">
         <h1 className="text-2xl font-bold">{heading}</h1>
         <div className="flex gap-2">
-          <Button onClick={simulateWebhook}>Simulate Webhook</Button>
-          <Button variant="destructive" onClick={clearScreen}>Clear All</Button>
+          <button
+            onClick={simulateWebhook}
+            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded transition"
+          >
+            Simulate Webhook
+          </button>
+          <button
+            onClick={clearScreen}
+            className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded transition"
+          >
+            Clear All
+          </button>
         </div>
       </div>
 
@@ -95,24 +103,22 @@ export default function ScreenerDashboard() {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {alerts.map((alert, index) => (
-            <Card
+            <div
               key={index}
-              className="transition transform hover:scale-105 hover:shadow-xl bg-white border border-gray-300 text-black duration-300 ease-in-out"
+              className="transition transform hover:scale-105 hover:shadow-xl bg-white border border-gray-300 text-black duration-300 ease-in-out p-4 flex justify-between items-center rounded"
             >
-              <CardContent className="p-4 flex justify-between items-center">
-                <div>
-                  <div className="text-lg font-semibold">{alert.name}</div>
-                  <div className="text-sm text-gray-600">Level: {alert.level}</div>
-                </div>
-                <button
-                  onClick={() => toggleChecked(index)}
-                  className="text-2xl focus:outline-none"
-                  title="Mark as checked"
-                >
-                  {alert.checked ? '❤️' : '🤍'}
-                </button>
-              </CardContent>
-            </Card>
+              <div>
+                <div className="text-lg font-semibold">{alert.name}</div>
+                <div className="text-sm text-gray-600">Level: {alert.level}</div>
+              </div>
+              <button
+                onClick={() => toggleChecked(index)}
+                className="text-2xl focus:outline-none"
+                title="Mark as checked"
+              >
+                {alert.checked ? '❤️' : '🤍'}
+              </button>
+            </div>
           ))}
         </div>
       )}
