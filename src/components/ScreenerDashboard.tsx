@@ -16,10 +16,14 @@ export default function ScreenerDashboard() {
     const q = query(collection(db, "webhooks"), orderBy("timestamp", "desc"));
 
     const unsubscribe = onSnapshot(q, (querySnapshot) => {
+      console.log("📡 Real-time update received. Docs count:", querySnapshot.size);
+
       const fetchedAlerts: PairAlert[] = [];
 
       querySnapshot.forEach((doc) => {
         const data = doc.data();
+        console.log(`📄 Doc ID: ${doc.id}, Data:`, data); // Debug log
+
         fetchedAlerts.push({
           id: doc.id,
           name: data.name,
@@ -31,7 +35,7 @@ export default function ScreenerDashboard() {
       setLoading(false);
     });
 
-    // Cleanup subscription on unmount
+    // Cleanup the Firestore listener when component unmounts
     return () => unsubscribe();
   }, []);
 
