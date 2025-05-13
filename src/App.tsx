@@ -1,5 +1,5 @@
 import React from 'react';
-import ScreenerDashboard from './components/ScreenerDashboard'; // Correct path
+import ScreenerDashboard from './components/ScreenerDashboard';
 
 function App() {
   return (
