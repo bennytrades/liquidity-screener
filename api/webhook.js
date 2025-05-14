@@ -16,7 +16,7 @@ const sendDiscordAlert = async (name, level, exchange) => {
   const webhookUrl = process.env.DISCORD_WEBHOOK_URL;
 
   const message = {
-    content: `🚨 **Liquidity Event**\n**Pair:** ${name}\n**Level:** ${level}\n**Exchange:** ${exchange}\n\n📌 *Tip: Open the pair and look for reversal signs after liquidity sweep and IFVG confirmation.*`,
+    content: `🚨 **Liquidity Event**\n**Pair:** ${name}\n**Level:** ${level}\n**exchange:** ${exchange}\n\n📌 *Tip: Open the pair and look for reversal signs after liquidity sweep and IFVG confirmation.*`,
   };
 
   try {
@@ -33,21 +33,22 @@ const sendDiscordAlert = async (name, level, exchange) => {
 
 export default async function handler(req, res) {
   if (req.method === 'POST') {
-    const { name, level, Exchange } = req.body;
+    const { name, level, exchange } = req.body;
 
-    if (!name || !level || !Exchange) {
+    if (!name || !level || !exchange) {
       return res.status(400).json({ success: false, message: 'Missing name, level, or exchange.' });
     }
 
     try {
       const docRef = await db.collection('webhooks').add({
-        name,
-        level,
-        exchange: Exchange,
-        timestamp: admin.firestore.FieldValue.serverTimestamp(),
-      });
+  name,
+  level,
+  exchange,  // Use the lowercase version here
+  timestamp: admin.firestore.FieldValue.serverTimestamp(),
+});
 
-      await sendDiscordAlert(name, level, Exchange);
+await sendDiscordAlert(name, level, exchange);
+
 
       return res.status(200).json({ success: true, id: docRef.id });
     } catch (error) {
