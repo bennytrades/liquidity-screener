@@ -64,18 +64,28 @@ export default function ScreenerDashboard() {
   };
 
   const pageStyle = {
-    backgroundColor: "#f0f0f0",
-    color: "#111827",
+    backgroundColor: "#000000",
+    color: "#ffffff",
     minHeight: "100vh",
     padding: "24px",
     fontFamily: "Arial, sans-serif",
+    display: "flex",
+    flexDirection: "column" as const,
+    alignItems: "center" as const,
+  };
+
+  const gridStyle = {
+    display: "grid",
+    gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))",
+    gap: "16px",
+    maxWidth: "800px",
+    width: "100%",
   };
 
   const cardStyle = {
-    backgroundColor: "#f9f9f9", // Off-white background
+    backgroundColor: "#f9f9f9",
     borderRadius: "8px",
     padding: "20px",
-    marginBottom: "16px",
     boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
     transition: "transform 0.2s ease",
     display: "flex",
@@ -111,22 +121,26 @@ export default function ScreenerDashboard() {
       ) : alerts.length === 0 ? (
         <p>No Liquidity Events Yet</p>
       ) : (
-        alerts.map((alert) => (
-          <div
-            key={alert.id}
-            style={cardStyle}
-            onMouseEnter={(e) => (e.currentTarget.style.transform = "scale(1.05)")}
-            onMouseLeave={(e) => (e.currentTarget.style.transform = "scale(1)")}
-          >
-            <div>
-              <div style={{ fontSize: "20px", fontWeight: "bold" }}>{alert.name}</div>
-              <div style={badgeStyle(alert.level)}>Level: {alert.level}</div>
+        <div style={gridStyle}>
+          {alerts.map((alert) => (
+            <div
+              key={alert.id}
+              style={cardStyle}
+              onMouseEnter={(e) => (e.currentTarget.style.transform = "scale(1.05)")}
+              onMouseLeave={(e) => (e.currentTarget.style.transform = "scale(1)")}
+            >
+              <div>
+                <div style={{ fontSize: "20px", fontWeight: "bold", color: "#111827" }}>
+                  {alert.name}
+                </div>
+                <div style={badgeStyle(alert.level)}>Level: {alert.level}</div>
+              </div>
+              <div onClick={() => toggleChecked(alert.id)} style={heartStyle(alert.checked!)}>
+                {alert.checked ? "❤️" : "🤍"}
+              </div>
             </div>
-            <div onClick={() => toggleChecked(alert.id)} style={heartStyle(alert.checked!)}>
-              {alert.checked ? "❤️" : "🤍"}
-            </div>
-          </div>
-        ))
+          ))}
+        </div>
       )}
     </div>
   );
