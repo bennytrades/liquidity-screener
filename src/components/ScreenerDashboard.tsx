@@ -148,7 +148,14 @@ export default function ScreenerDashboard() {
                 <div style={{ fontSize: "20px", fontWeight: "bold", color: "#111827" }}>
                   {alert.name}
                 </div>
-                <div style={{ fontSize: "14px", color: "#666666" }}>{alert.exchange}</div>
+                <div style={{ 
+  fontSize: "16px", 
+  fontWeight: "bold", 
+  color: "#60a5fa" // Light blue (Tailwind's blue-400)
+}}>
+  {alert.exchange}
+</div>
+
               </div>
 <div style={{
   display: "inline-block",
