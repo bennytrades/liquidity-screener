@@ -16,7 +16,7 @@ const sendDiscordAlert = async (name, level, exchange) => {
   const webhookUrl = process.env.DISCORD_WEBHOOK_URL;
 
   const message = {
-    content: `🚨 **Liquidity Event**\n**Pair:** ${name}\n**Level:** ${level}\n**exchange:** ${exchange}\n\n📌 *Tip: Open the pair and look for reversal signs after liquidity sweep and IFVG confirmation.*`,
+    content: `:money_mouth: **Liquidity Event** :money_mouth: \n\nPair:** ${name}**\nLevel:** ${level}**\nExchange:** ${exchange}**\n\n📌 *Tip: Open the pair and look for reversal signs after liquidity sweep, Step 1: IFVG confirmation, Step 2: High Volume, Step 3: FVG Overlapping IFVG, Step 4: Break Even at 1:1*`,
   };
 
   try {
