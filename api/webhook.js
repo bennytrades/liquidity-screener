@@ -12,25 +12,25 @@ if (!admin.apps.length) {
 const db = admin.firestore();
 
 // ✅ Discord Alert Function
-const sendDiscordAlert = async (name, level) => {
+const sendDiscordAlert = async (name, level, exchange) => {
   const webhookUrl = process.env.DISCORD_WEBHOOK_URL;
 
- const message = {
-  content: `🚨 **Liquidity Event** 🚨\n**Pair:** ${name}\n**Level:** ${level}\n\n📌 *Tip: Look for Inversion FVG after sweep confirmation. Enter on pullback to IFVG zone.*`,
-};
-
+  const message = {
+    content: `🚨 **Liquidity Event** 🚨\n**Pair:** ${name}\n**Level:** ${level}\n**Exchange:** ${exchange}\n\n📌 *Tip: Open the pair and look for reversal signs after liquidity sweep and IFVG confirmation.*`,
+  };
 
   try {
     await fetch(webhookUrl, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify(message),
     });
-    console.log('✅ Discord alert sent!');
-  } catch (error) {
-    console.error('❌ Failed to send Discord alert:', error);
+    console.log("✅ Discord alert sent!");
+  } catch (err) {
+    console.error("❌ Failed to send Discord alert:", err);
   }
 };
+
 
 export default async function handler(req, res) {
   if (req.method === 'POST') {
@@ -48,7 +48,7 @@ export default async function handler(req, res) {
       });
 
       // ✅ Only send Discord alert after Firestore save succeeds
-      await sendDiscordAlert(name, level);
+      await sendDiscordAlert(data.name, data.level, data.Exchange);
 
       return res.status(200).json({ success: true, message: 'Webhook stored and Discord alert sent.' });
     } catch (error) {

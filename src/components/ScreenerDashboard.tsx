@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { db } from "../firebaseConfig";
-import { collection, query, orderBy, onSnapshot, deleteDoc, doc } from "firebase/firestore";
+import { collection, query, orderBy, onSnapshot } from "firebase/firestore";
 
 type PairAlert = {
   id: string;
@@ -12,8 +12,8 @@ type PairAlert = {
     | "1H LVL" | "4H LVL"
     | "GAP FILLED"
     | "UNKNOWN";
+  exchange: string;
   timestamp: number;
-  checked?: boolean;
 };
 
 const levelColors: Record<string, string> = {
@@ -29,23 +29,11 @@ const levelColors: Record<string, string> = {
   UNKNOWN: "#6b7280",
 };
 
-const LOCAL_STORAGE_KEY = "liquidity_screener_checked";
-
 export default function ScreenerDashboard() {
   const [alerts, setAlerts] = useState<PairAlert[]>([]);
   const [loading, setLoading] = useState(true);
-  const [tick, setTick] = useState(0);
 
   useEffect(() => {
-    const interval = setInterval(() => {
-      setTick((prev) => prev + 1);
-    }, 1000);
-    return () => clearInterval(interval);
-  }, []);
-
-  useEffect(() => {
-    const savedChecked = JSON.parse(localStorage.getItem(LOCAL_STORAGE_KEY) || "{}");
-
     const q = query(collection(db, "webhooks"), orderBy("timestamp", "desc"));
     const unsubscribe = onSnapshot(q, (querySnapshot) => {
       const fetchedAlerts: PairAlert[] = [];
@@ -56,8 +44,8 @@ export default function ScreenerDashboard() {
           id: docItem.id,
           name: data.name,
           level: data.level,
+          exchange: data.Exchange || "Unknown",
           timestamp: data.timestamp?.seconds ? data.timestamp.seconds * 1000 : Date.now(),
-          checked: savedChecked[docItem.id] || false,
         });
       });
 
@@ -67,31 +55,6 @@ export default function ScreenerDashboard() {
 
     return () => unsubscribe();
   }, []);
-
-  const toggleChecked = (id: string) => {
-    setAlerts((prev) => {
-      const updated = prev.map((alert) =>
-        alert.id === id ? { ...alert, checked: !alert.checked } : alert
-      );
-
-      const checkedState = updated.reduce<Record<string, boolean>>((acc, alert) => {
-        acc[alert.id] = !!alert.checked;
-        return acc;
-      }, {});
-
-      localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(checkedState));
-      return updated;
-    });
-  };
-
-  const deleteAlert = async (id: string) => {
-    try {
-      await deleteDoc(doc(db, "webhooks", id));
-      setAlerts((prev) => prev.filter((alert) => alert.id !== id));
-    } catch (error) {
-      console.error("Error deleting alert:", error);
-    }
-  };
 
   const formatTimer = (timestamp: number) => {
     const elapsed = Math.floor((Date.now() - timestamp) / 1000);
@@ -135,19 +98,19 @@ export default function ScreenerDashboard() {
     padding: "20px",
     boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
     transition: "transform 0.2s ease",
+    display: "flex",
+    flexDirection: "column" as const,
+    justifyContent: "space-between",
+    alignItems: "flex-start" as const,
     position: "relative" as const,
+  };
+
+  const headerStyle = {
+    width: "100%",
     display: "flex",
     justifyContent: "space-between",
     alignItems: "center",
-  };
-
-  const closeButtonStyle = {
-    position: "absolute" as const,
-    top: "8px",
-    right: "12px",
-    fontSize: "18px",
-    color: "#999999",
-    cursor: "pointer",
+    marginBottom: "12px",
   };
 
   const badgeStyle = (level: string) => ({
@@ -158,13 +121,6 @@ export default function ScreenerDashboard() {
     color: "#ffffff",
     fontSize: "12px",
     marginTop: "8px",
-  });
-
-  const heartStyle = (checked: boolean) => ({
-    fontSize: "24px",
-    color: checked ? "#ef4444" : "#888888",
-    cursor: "pointer",
-    transition: "color 0.2s ease",
   });
 
   const timerStyle = {
@@ -192,23 +148,14 @@ export default function ScreenerDashboard() {
               onMouseEnter={(e) => (e.currentTarget.style.transform = "scale(1.05)")}
               onMouseLeave={(e) => (e.currentTarget.style.transform = "scale(1)")}
             >
-              <span
-                style={closeButtonStyle}
-                onClick={() => deleteAlert(alert.id)}
-                title="Delete Alert"
-              >
-                ❌
-              </span>
-              <div>
+              <div style={headerStyle}>
                 <div style={{ fontSize: "20px", fontWeight: "bold", color: "#111827" }}>
                   {alert.name}
                 </div>
-                <div style={badgeStyle(alert.level)}>{alert.level}</div>
-                <div style={timerStyle}>⏱️ {formatTimer(alert.timestamp)}</div>
+                <div style={{ fontSize: "14px", color: "#666666" }}>{alert.exchange}</div>
               </div>
-              <div onClick={() => toggleChecked(alert.id)} style={heartStyle(alert.checked!)}>
-                {alert.checked ? "❤️" : "🤍"}
-              </div>
+              <div style={badgeStyle(alert.level)}>{alert.level}</div>
+              <div style={timerStyle}>⏱️ {formatTimer(alert.timestamp)}</div>
             </div>
           ))}
         </div>
