@@ -48,7 +48,7 @@ export default async function handler(req, res) {
       });
 
       // ✅ Only send Discord alert after Firestore save succeeds
-      await sendDiscordAlert(data.name, data.level, data.Exchange);
+      await sendDiscordAlert(data.name, data.level, data.exchange);
 
       return res.status(200).json({ success: true, message: 'Webhook stored and Discord alert sent.' });
     } catch (error) {
