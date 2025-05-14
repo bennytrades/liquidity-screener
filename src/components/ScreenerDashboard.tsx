@@ -76,13 +76,14 @@ export default function ScreenerDashboard() {
 
   const formatTimer = (timestamp: number) => {
     const elapsed = Math.floor((Date.now() - timestamp) / 1000);
-    const minutes = String(Math.floor(elapsed / 60)).padStart(2, "0");
+    const hours = String(Math.floor(elapsed / 3600)).padStart(2, "0");
+    const minutes = String(Math.floor((elapsed % 3600) / 60)).padStart(2, "0");
     const seconds = String(elapsed % 60).padStart(2, "0");
-    return `${minutes}:${seconds}`;
+    return `${hours}:${minutes}:${seconds}`;
   };
 
   const pageStyle = {
-    backgroundColor: "#000000",
+    backgroundColor: "#1e1e1e", // ChatGPT-like soft dark grey
     color: "#ffffff",
     minHeight: "100vh",
     padding: "24px",
