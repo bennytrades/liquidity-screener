@@ -1,53 +1,36 @@
-import { db } from "../../firebaseConfig"; // Adjust path if needed
-import { collection, addDoc } from "firebase/firestore";
+import admin from 'firebase-admin';
 
-// ✅ Discord Alert Function
-const sendDiscordAlert = async (pair, level) => {
-  const webhookUrl = process.env.DISCORD_WEBHOOK_URL; // Prefer using Vercel Env Variable for security
+if (!admin.apps.length) {
+  const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
 
-  const message = {
-    content: `🚨 **New Liquidity Event**\nPair: **${pair}**\nLevel: **${level}**`
-  };
+  admin.initializeApp({
+    credential: admin.credential.cert(serviceAccount),
+  });
+}
 
-  try {
-    await fetch(webhookUrl, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(message),
-    });
-    console.log("✅ Discord alert sent!");
-  } catch (err) {
-    console.error("❌ Failed to send Discord alert:", err);
-  }
-};
+const db = admin.firestore();
 
-// ✅ Webhook API Handler
 export default async function handler(req, res) {
-  if (req.method === "POST") {
+  if (req.method === 'POST') {
+    const { name, level } = req.body;
+
+    if (!name || !level) {
+      return res.status(400).json({ success: false, message: 'Missing name or level.' });
+    }
+
     try {
-      const data = req.body;
-
-      if (!data.pair || !data.level) {
-        return res.status(400).json({ error: "Missing 'pair' or 'level' in payload." });
-      }
-
-      // Store in Firestore
-      const docRef = await addDoc(collection(db, "webhooks"), {
-        name: data.pair,
-        level: data.level,
-        timestamp: new Date(),
+      await db.collection('webhooks').add({
+        name,
+        level,
+        timestamp: admin.firestore.FieldValue.serverTimestamp(),
       });
 
-      // Send Discord Notification after saving
-      await sendDiscordAlert(data.pair, data.level);
-
-      return res.status(200).json({ success: true, id: docRef.id });
+      return res.status(200).json({ success: true, message: 'Webhook stored successfully.' });
     } catch (error) {
-      console.error("❌ Error handling webhook:", error);
-      return res.status(500).json({ error: "Internal Server Error" });
+      console.error('Error storing webhook:', error);
+      return res.status(500).json({ success: false, message: 'Internal Server Error.' });
     }
   } else {
-    res.setHeader("Allow", ["POST"]);
-    return res.status(405).end(`Method ${req.method} Not Allowed`);
+    return res.status(405).json({ message: 'Method Not Allowed' });
   }
 }
