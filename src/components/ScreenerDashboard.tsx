@@ -150,17 +150,18 @@ export default function ScreenerDashboard() {
                 </div>
                 <div style={{ fontSize: "14px", color: "#666666" }}>{alert.exchange}</div>
               </div>
-              <div style={{
-                display: "inline-block",
-                padding: "4px 12px",
-                borderRadius: "12px",
-                backgroundColor: levelColors[alert.level] || "#6b7280",
-                color: "#ffffff",
-                fontSize: "12px",
-                marginBottom: "8px",
-              }}>
-                {alert.level}
-              </div>
+<div style={{
+  display: "inline-block",
+  padding: "4px 12px",
+  borderRadius: "12px",
+  backgroundColor: levelColors[alert.level] || "#6b7280",
+  color: "#ffffff",
+  fontSize: "12px",
+  marginBottom: "8px",
+}}>
+  {alert.level}
+</div>
+
               <div style={{ fontSize: "14px", color: "#555555" }}>
                 ⏱️ {formatTimer(alert.timestamp)}
               </div>
