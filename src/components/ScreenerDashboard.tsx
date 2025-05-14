@@ -1,7 +1,9 @@
+// ✅ React Core and Firestore Imports
 import React, { useState, useEffect } from "react";
 import { db } from "../firebaseConfig";
 import { collection, query, orderBy, onSnapshot, deleteDoc, doc } from "firebase/firestore";
 
+// ✅ Type Definition for Alert Data
 type PairAlert = {
   id: string;
   name: string;
@@ -10,6 +12,7 @@ type PairAlert = {
   timestamp: number;
 };
 
+// ✅ Color Mapping for Levels
 const levelColors: Record<string, string> = {
   PDH: "#000000",
   PDL: "#000000",
@@ -23,19 +26,19 @@ const levelColors: Record<string, string> = {
   UNKNOWN: "#6b7280",
 };
 
+// ✅ Main Component
 export default function ScreenerDashboard() {
   const [alerts, setAlerts] = useState<PairAlert[]>([]);
   const [loading, setLoading] = useState(true);
 
+  // ✅ Fetch Data and Listen for Real-Time Updates from Firestore
   useEffect(() => {
     const q = query(collection(db, "webhooks"), orderBy("timestamp", "desc"));
     const unsubscribe = onSnapshot(q, (querySnapshot) => {
       const fetchedAlerts: PairAlert[] = [];
       querySnapshot.forEach((docItem) => {
         const data = docItem.data();
-        const timestamp = data.timestamp?.seconds
-          ? data.timestamp.seconds * 1000
-          : Date.now();
+        const timestamp = data.timestamp?.seconds ? data.timestamp.seconds * 1000 : Date.now();
 
         fetchedAlerts.push({
           id: docItem.id,
@@ -49,9 +52,10 @@ export default function ScreenerDashboard() {
       setLoading(false);
     });
 
-    return () => unsubscribe();
+    return () => unsubscribe(); // ✅ Cleanup Listener on Component Unmount
   }, []);
 
+  // ✅ Delete an Alert from Firestore
   const handleDelete = async (id: string) => {
     try {
       await deleteDoc(doc(db, "webhooks", id));
@@ -61,6 +65,7 @@ export default function ScreenerDashboard() {
     }
   };
 
+  // ✅ Timer Formatting Function
   const formatTimer = (timestamp: number) => {
     const now = Date.now();
     const elapsed = Math.max(0, Math.floor((now - timestamp) / 1000));
@@ -82,7 +87,7 @@ export default function ScreenerDashboard() {
 
   return (
     <div style={{
-      backgroundColor: "#1e1e1e",
+      backgroundColor: "#1e1e1e", // ✅ Dark Background (ChatGPT Style)
       color: "#ffffff",
       minHeight: "100vh",
       padding: "24px",
@@ -95,6 +100,7 @@ export default function ScreenerDashboard() {
         🚀 Liquidity Screener
       </h1>
 
+      {/* ✅ Loading State or No Alerts */}
       {loading ? (
         <p>Loading Data...</p>
       ) : alerts.length === 0 ? (
@@ -102,7 +108,7 @@ export default function ScreenerDashboard() {
       ) : (
         <div style={{
           display: "grid",
-          gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))",
+          gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))", // ✅ Responsive Grid
           gap: "16px",
           maxWidth: "800px",
           width: "100%",
@@ -111,7 +117,7 @@ export default function ScreenerDashboard() {
             <div
               key={alert.id}
               style={{
-                backgroundColor: "#f9f9f9",
+                backgroundColor: "#f9f9f9", // ✅ Off-white Card Background
                 borderRadius: "8px",
                 padding: "20px",
                 boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
@@ -124,6 +130,7 @@ export default function ScreenerDashboard() {
               onMouseEnter={(e) => (e.currentTarget.style.transform = "scale(1.05)")}
               onMouseLeave={(e) => (e.currentTarget.style.transform = "scale(1)")}
             >
+              {/* ✅ Close Button */}
               <button
                 onClick={() => handleDelete(alert.id)}
                 style={{
@@ -133,14 +140,14 @@ export default function ScreenerDashboard() {
                   background: "transparent",
                   border: "none",
                   color: "#888",
-                  fontSize: "16px",
+                  fontSize: "18px",
                   cursor: "pointer",
                 }}
               >
-                ✖
+                ❌
               </button>
 
-              {/* Name and Exchange on the Same Row */}
+              {/* ✅ Name and Exchange */}
               <div style={{
                 display: "flex",
                 justifyContent: "space-between",
@@ -150,16 +157,16 @@ export default function ScreenerDashboard() {
                 <div style={{ fontSize: "20px", fontWeight: "bold", color: "#111827" }}>
                   {alert.name}
                 </div>
-                <div style={{ 
-                  fontSize: "16px", 
-                  fontWeight: "bold", 
-                  color: "#60a5fa" // Light blue color for Exchange
+                <div style={{
+                  fontSize: "16px",
+                  fontWeight: "bold",
+                  color: "#60a5fa" // ✅ Light Blue for Exchange
                 }}>
                   {alert.exchange}
                 </div>
               </div>
 
-              {/* Level Badge */}
+              {/* ✅ Level Badge */}
               <div style={{
                 display: "inline-block",
                 padding: "4px 12px",
@@ -172,7 +179,7 @@ export default function ScreenerDashboard() {
                 {alert.level}
               </div>
 
-              {/* Timer */}
+              {/* ✅ Timer Display */}
               <div style={{ fontSize: "14px", color: "#555555" }}>
                 ⏱️ {formatTimer(alert.timestamp)}
               </div>
