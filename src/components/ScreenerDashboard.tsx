@@ -30,7 +30,9 @@ const levelColors: Record<string, string> = {
 export default function ScreenerDashboard() {
   const [alerts, setAlerts] = useState<PairAlert[]>([]);
   const [loading, setLoading] = useState(true);
+  const [currentTime, setCurrentTime] = useState(Date.now()); // ⏱️ Keeps Current Time Updated for Live Timer
 
+  // ✅ Real-time Firestore Data Fetch
   useEffect(() => {
     const q = query(collection(db, "webhooks"), orderBy("timestamp", "desc"));
     const unsubscribe = onSnapshot(q, (querySnapshot) => {
@@ -51,9 +53,19 @@ export default function ScreenerDashboard() {
       setLoading(false);
     });
 
-    return () => unsubscribe();
+    return () => unsubscribe(); // ✅ Cleanup on Unmount
   }, []);
 
+  // ✅ Global Timer to Force Re-render Every Second
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCurrentTime(Date.now());
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, []);
+
+  // ✅ Delete an Alert from Firestore
   const handleDelete = async (id: string) => {
     try {
       await deleteDoc(doc(db, "webhooks", id));
@@ -63,31 +75,28 @@ export default function ScreenerDashboard() {
     }
   };
 
-const formatTimer = (timestamp: number) => {
-  const now = Date.now();
-  const elapsed = Math.max(0, Math.floor((now - timestamp) / 1000)); // Elapsed time in seconds
+  // ✅ Timer Formatting Logic with H:MM:SS + "mins ago" after 60s
+  const formatTimer = (timestamp: number) => {
+    const elapsed = Math.max(0, Math.floor((currentTime - timestamp) / 1000));
 
-  const hours = Math.floor(elapsed / 3600);
-  const minutes = Math.floor((elapsed % 3600) / 60);
-  const seconds = elapsed % 60;
+    const hours = Math.floor(elapsed / 3600);
+    const minutes = Math.floor((elapsed % 3600) / 60);
+    const seconds = elapsed % 60;
 
-  const formattedHours = hours > 0 ? `${hours}:` : "";
-  const formattedMinutes = String(minutes).padStart(2, "0");
+    const formattedHours = hours > 0 ? `${hours}:` : "";
+    const formattedMinutes = String(minutes).padStart(2, "0");
 
-  if (elapsed < 60) {
-    // Show full H:MM:SS if under 1 minute
-    const formattedSeconds = String(seconds).padStart(2, "0");
-    return `${formattedHours}${formattedMinutes}:${formattedSeconds}`;
-  } else {
-    // Show H:MM mins ago once over 60 seconds, hide seconds
-    return `${formattedHours}${formattedMinutes} mins ago`;
-  }
-};
-
+    if (elapsed < 60) {
+      const formattedSeconds = String(seconds).padStart(2, "0");
+      return `${formattedHours}${formattedMinutes}:${formattedSeconds}`;
+    } else {
+      return `${formattedHours}${formattedMinutes} mins ago`;
+    }
+  };
 
   return (
     <div style={{
-      backgroundColor: "#1e1e1e",
+      backgroundColor: "#1e1e1e", // ChatGPT-Like Dark Background
       color: "#ffffff",
       minHeight: "100vh",
       padding: "24px",
@@ -100,6 +109,7 @@ const formatTimer = (timestamp: number) => {
         🚀 Liquidity Screener 🚀
       </h1>
 
+      {/* ✅ Loading or No Data */}
       {loading ? (
         <p>Loading Data...</p>
       ) : alerts.length === 0 ? (
@@ -116,7 +126,7 @@ const formatTimer = (timestamp: number) => {
             <div
               key={alert.id}
               style={{
-                backgroundColor: "#f9f9f9",
+                backgroundColor: "#f9f9f9", // Light Card Background
                 borderRadius: "8px",
                 padding: "20px",
                 boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
@@ -129,7 +139,7 @@ const formatTimer = (timestamp: number) => {
               onMouseEnter={(e) => (e.currentTarget.style.transform = "scale(1.05)")}
               onMouseLeave={(e) => (e.currentTarget.style.transform = "scale(1)")}
             >
-              {/* ✅ Close Button */}
+              {/* ❌ Close Button */}
               <button
                 onClick={() => handleDelete(alert.id)}
                 style={{
@@ -146,43 +156,41 @@ const formatTimer = (timestamp: number) => {
                 ❌
               </button>
 
-              {/* ✅ Pair Name */}
-              <div style={{
-                fontSize: "20px",
-                fontWeight: "bold",
-                color: "#111827",
-                marginBottom: "12px",
-              }}>
-                {alert.name}
-              </div>
-
-              {/* ✅ Level and Exchange on the Same Row */}
+              {/* 📈 Name and Exchange Row */}
               <div style={{
                 display: "flex",
                 justifyContent: "space-between",
                 alignItems: "center",
                 marginBottom: "12px",
               }}>
-                <div style={{
-                  display: "inline-block",
-                  padding: "4px 12px",
-                  borderRadius: "12px",
-                  backgroundColor: levelColors[alert.level] || "#6b7280",
-                  color: "#ffffff",
-                  fontSize: "12px",
-                }}>
-                  {alert.level}
+                <div style={{ fontSize: "20px", fontWeight: "bold", color: "#111827" }}>
+                  {alert.name}
                 </div>
                 <div style={{
                   fontSize: "16px",
                   fontWeight: "bold",
-                  color: "#60a5fa",
+                  color: "#60a5fa" // Light Blue
                 }}>
                   {alert.exchange}
                 </div>
               </div>
 
-              {/* ✅ Timer */}
+              {/* 🏷️ Level Badge */}
+              <div style={{
+                display: "inline-block",
+                padding: "4px 12px",
+                borderRadius: "12px",
+                backgroundColor: levelColors[alert.level] || "#6b7280",
+                color: "#ffffff",
+                fontSize: "12px",
+                marginBottom: "8px",
+                textAlign: "center",
+                alignSelf: "flex-start",
+              }}>
+                {alert.level}
+              </div>
+
+              {/* ⏱️ Timer */}
               <div style={{ fontSize: "14px", color: "#555555" }}>
                 ⏱️ {formatTimer(alert.timestamp)}
               </div>
