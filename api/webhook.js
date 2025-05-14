@@ -1,5 +1,5 @@
 import admin from 'firebase-admin';
-import fetch from 'node-fetch'; // Add this if not already available in your environment
+import fetch from 'node-fetch'; // Ensure this is installed or replace with native fetch if using Node 18+
 
 if (!admin.apps.length) {
   const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
@@ -16,7 +16,7 @@ const sendDiscordAlert = async (name, level, exchange) => {
   const webhookUrl = process.env.DISCORD_WEBHOOK_URL;
 
   const message = {
-    content: `🚨 **Liquidity Event** 🚨\n**Pair:** ${name}\n**Level:** ${level}\n**Exchange:** ${exchange}\n\n📌 *Tip: Open the pair and look for reversal signs after liquidity sweep and IFVG confirmation.*`,
+    content: `🚨 **Liquidity Event**\n**Pair:** ${name}\n**Level:** ${level}\n**Exchange:** ${exchange}\n\n📌 *Tip: Open the pair and look for reversal signs after liquidity sweep and IFVG confirmation.*`,
   };
 
   try {
@@ -26,33 +26,32 @@ const sendDiscordAlert = async (name, level, exchange) => {
       body: JSON.stringify(message),
     });
     console.log("✅ Discord alert sent!");
-  } catch (err) {
-    console.error("❌ Failed to send Discord alert:", err);
+  } catch (error) {
+    console.error("❌ Failed to send Discord alert:", error);
   }
 };
 
-
 export default async function handler(req, res) {
   if (req.method === 'POST') {
-    const { name, level } = req.body;
+    const { name, level, Exchange } = req.body;
 
-    if (!name || !level) {
-      return res.status(400).json({ success: false, message: 'Missing name or level.' });
+    if (!name || !level || !Exchange) {
+      return res.status(400).json({ success: false, message: 'Missing name, level, or exchange.' });
     }
 
     try {
-      await db.collection('webhooks').add({
+      const docRef = await db.collection('webhooks').add({
         name,
         level,
+        exchange: Exchange,
         timestamp: admin.firestore.FieldValue.serverTimestamp(),
       });
 
-      // ✅ Only send Discord alert after Firestore save succeeds
-      await sendDiscordAlert(data.name, data.level, data.exchange);
+      await sendDiscordAlert(name, level, Exchange);
 
-      return res.status(200).json({ success: true, message: 'Webhook stored and Discord alert sent.' });
+      return res.status(200).json({ success: true, id: docRef.id });
     } catch (error) {
-      console.error('❌ Error handling webhook:', error);
+      console.error('❌ Error storing webhook:', error);
       return res.status(500).json({ success: false, message: 'Internal Server Error.' });
     }
   } else {

@@ -1,17 +1,11 @@
 import React, { useState, useEffect } from "react";
 import { db } from "../firebaseConfig";
-import { collection, query, orderBy, onSnapshot } from "firebase/firestore";
+import { collection, query, orderBy, onSnapshot, deleteDoc, doc } from "firebase/firestore";
 
 type PairAlert = {
   id: string;
   name: string;
-  level:
-    | "PDH" | "PDL"
-    | "PWH" | "PWL"
-    | "iHOD" | "iLOD"
-    | "1H LVL" | "4H LVL"
-    | "GAP FILLED"
-    | "UNKNOWN";
+  level: string;
   exchange: string;
   timestamp: number;
 };
@@ -37,24 +31,31 @@ export default function ScreenerDashboard() {
     const q = query(collection(db, "webhooks"), orderBy("timestamp", "desc"));
     const unsubscribe = onSnapshot(q, (querySnapshot) => {
       const fetchedAlerts: PairAlert[] = [];
-
       querySnapshot.forEach((docItem) => {
         const data = docItem.data();
         fetchedAlerts.push({
           id: docItem.id,
           name: data.name,
           level: data.level,
-          exchange: data.Exchange || "Unknown",
+          exchange: data.exchange || "Unknown",
           timestamp: data.timestamp?.seconds ? data.timestamp.seconds * 1000 : Date.now(),
         });
       });
-
       setAlerts(fetchedAlerts);
       setLoading(false);
     });
 
     return () => unsubscribe();
   }, []);
+
+  const handleDelete = async (id: string) => {
+    try {
+      await deleteDoc(doc(db, "webhooks", id));
+      console.log(`Deleted alert with ID: ${id}`);
+    } catch (error) {
+      console.error("Error deleting document:", error);
+    }
+  };
 
   const formatTimer = (timestamp: number) => {
     const elapsed = Math.floor((Date.now() - timestamp) / 1000);
@@ -73,64 +74,17 @@ export default function ScreenerDashboard() {
     }
   };
 
-  const pageStyle = {
-    backgroundColor: "#1e1e1e",
-    color: "#ffffff",
-    minHeight: "100vh",
-    padding: "24px",
-    fontFamily: "Arial, sans-serif",
-    display: "flex",
-    flexDirection: "column" as const,
-    alignItems: "center" as const,
-  };
-
-  const gridStyle = {
-    display: "grid",
-    gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))",
-    gap: "16px",
-    maxWidth: "800px",
-    width: "100%",
-  };
-
-  const cardStyle = {
-    backgroundColor: "#f9f9f9",
-    borderRadius: "8px",
-    padding: "20px",
-    boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
-    transition: "transform 0.2s ease",
-    display: "flex",
-    flexDirection: "column" as const,
-    justifyContent: "space-between",
-    alignItems: "flex-start" as const,
-    position: "relative" as const,
-  };
-
-  const headerStyle = {
-    width: "100%",
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: "12px",
-  };
-
-  const badgeStyle = (level: string) => ({
-    display: "inline-block",
-    padding: "4px 12px",
-    borderRadius: "12px",
-    backgroundColor: levelColors[level] || "#6b7280",
-    color: "#ffffff",
-    fontSize: "12px",
-    marginTop: "8px",
-  });
-
-  const timerStyle = {
-    fontSize: "14px",
-    color: "#555555",
-    marginTop: "8px",
-  };
-
   return (
-    <div style={pageStyle}>
+    <div style={{
+      backgroundColor: "#1e1e1e",
+      color: "#ffffff",
+      minHeight: "100vh",
+      padding: "24px",
+      fontFamily: "Arial, sans-serif",
+      display: "flex",
+      flexDirection: "column",
+      alignItems: "center",
+    }}>
       <h1 style={{ fontSize: "28px", fontWeight: "bold", marginBottom: "24px" }}>
         🚀 Liquidity Screener
       </h1>
@@ -140,22 +94,70 @@ export default function ScreenerDashboard() {
       ) : alerts.length === 0 ? (
         <p>No Liquidity Events Yet</p>
       ) : (
-        <div style={gridStyle}>
+        <div style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))",
+          gap: "16px",
+          maxWidth: "800px",
+          width: "100%",
+        }}>
           {alerts.map((alert) => (
             <div
               key={alert.id}
-              style={cardStyle}
+              style={{
+                backgroundColor: "#f9f9f9",
+                borderRadius: "8px",
+                padding: "20px",
+                boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
+                transition: "transform 0.2s ease",
+                display: "flex",
+                flexDirection: "column",
+                justifyContent: "space-between",
+                position: "relative",
+              }}
               onMouseEnter={(e) => (e.currentTarget.style.transform = "scale(1.05)")}
               onMouseLeave={(e) => (e.currentTarget.style.transform = "scale(1)")}
             >
-              <div style={headerStyle}>
+              <button
+                onClick={() => handleDelete(alert.id)}
+                style={{
+                  position: "absolute",
+                  top: "8px",
+                  right: "12px",
+                  background: "transparent",
+                  border: "none",
+                  color: "#888",
+                  fontSize: "16px",
+                  cursor: "pointer",
+                }}
+              >
+                ✖
+              </button>
+              <div style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                marginBottom: "12px",
+              }}>
                 <div style={{ fontSize: "20px", fontWeight: "bold", color: "#111827" }}>
                   {alert.name}
                 </div>
                 <div style={{ fontSize: "14px", color: "#666666" }}>{alert.exchange}</div>
               </div>
-              <div style={badgeStyle(alert.level)}>{alert.level}</div>
-              <div style={timerStyle}>⏱️ {formatTimer(alert.timestamp)}</div>
+              <div style={{
+                display: "inline-block",
+                padding: "4px 12px",
+                borderRadius: "12px",
+                backgroundColor: levelColors[alert.level] || "#6b7280",
+                color: "#ffffff",
+                fontSize: "12px",
+                marginBottom: "8px",
+              }}>
+                {alert.level}
+              </div>
+              <div style={{ fontSize: "14px", color: "#555555" }}>
+                ⏱️ {formatTimer(alert.timestamp)}
+              </div>
             </div>
           ))}
         </div>
