@@ -85,21 +85,22 @@ export default function ScreenerDashboard() {
   };
 
   const formatTimer = (timestamp: number) => {
-    const elapsed = Math.floor((Date.now() - timestamp) / 1000);
-    const hours = Math.floor(elapsed / 3600);
-    const minutes = Math.floor((elapsed % 3600) / 60);
-    const seconds = elapsed % 60;
+  const elapsed = Math.floor((Date.now() - timestamp) / 1000);
+  const hours = Math.floor(elapsed / 3600);
+  const minutes = Math.floor((elapsed % 3600) / 60);
+  const seconds = elapsed % 60;
 
-    const formattedHours = hours > 0 ? `${hours}:` : "";
-    const formattedMinutes = String(minutes).padStart(2, "0");
+  const formattedHours = hours > 0 ? `${hours}:` : "";
+  const formattedMinutes = String(minutes).padStart(2, "0");
 
-    if (elapsed < 60) {
-      const formattedSeconds = String(seconds).padStart(2, "0");
-      return `${formattedHours}${formattedMinutes}:${formattedSeconds}`;
-    } else {
-      return `${formattedHours}${formattedMinutes}`;
-    }
-  };
+  if (elapsed < 60) {
+    const formattedSeconds = String(seconds).padStart(2, "0");
+    return `${formattedHours}${formattedMinutes}:${formattedSeconds}`;
+  } else {
+    return `${formattedHours}${formattedMinutes} mins ago`;
+  }
+};
+
 
   const pageStyle = {
     backgroundColor: "#1e1e1e", // ChatGPT-like soft grey
