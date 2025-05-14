@@ -6,14 +6,15 @@ type PairAlert = {
   id: string;
   name: string;
   level: "PDH" | "PDL" | "PWH" | "PWL" | "UNKNOWN";
+  checked?: boolean; // For local UI state
 };
 
 const levelColors: Record<string, string> = {
-  PDH: "#22c55e",      // Green
-  PDL: "#3b82f6",      // Blue
-  PWH: "#facc15",      // Yellow
-  PWL: "#ef4444",      // Red
-  UNKNOWN: "#6b7280",  // Gray
+  PDH: "#22c55e",
+  PDL: "#3b82f6",
+  PWH: "#facc15",
+  PWL: "#ef4444",
+  UNKNOWN: "#6b7280",
 };
 
 export default function ScreenerDashboard() {
@@ -32,6 +33,7 @@ export default function ScreenerDashboard() {
           id: doc.id,
           name: data.name,
           level: data.level,
+          checked: false,
         });
       });
 
@@ -41,6 +43,14 @@ export default function ScreenerDashboard() {
 
     return () => unsubscribe();
   }, []);
+
+  const toggleChecked = (id: string) => {
+    setAlerts((prev) =>
+      prev.map((alert) =>
+        alert.id === id ? { ...alert, checked: !alert.checked } : alert
+      )
+    );
+  };
 
   const pageStyle = {
     backgroundColor: "#111827",
@@ -57,10 +67,9 @@ export default function ScreenerDashboard() {
     marginBottom: "16px",
     boxShadow: "0 4px 12px rgba(0,0,0,0.2)",
     transition: "transform 0.2s ease",
-  };
-
-  const cardHoverStyle = {
-    transform: "scale(1.05)",
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
   };
 
   const badgeStyle = (level: string) => ({
@@ -71,6 +80,13 @@ export default function ScreenerDashboard() {
     color: "#ffffff",
     fontSize: "12px",
     marginTop: "8px",
+  });
+
+  const heartStyle = (checked: boolean) => ({
+    fontSize: "24px",
+    color: checked ? "#ef4444" : "#ffffff",
+    cursor: "pointer",
+    transition: "color 0.2s ease",
   });
 
   return (
@@ -91,8 +107,13 @@ export default function ScreenerDashboard() {
             onMouseEnter={(e) => (e.currentTarget.style.transform = "scale(1.05)")}
             onMouseLeave={(e) => (e.currentTarget.style.transform = "scale(1)")}
           >
-            <div style={{ fontSize: "20px", fontWeight: "bold" }}>{alert.name}</div>
-            <div style={badgeStyle(alert.level)}>Level: {alert.level}</div>
+            <div>
+              <div style={{ fontSize: "20px", fontWeight: "bold" }}>{alert.name}</div>
+              <div style={badgeStyle(alert.level)}>Level: {alert.level}</div>
+            </div>
+            <div onClick={() => toggleChecked(alert.id)} style={heartStyle(alert.checked!)}>
+              {alert.checked ? "❤️" : "🤍"}
+            </div>
           </div>
         ))
       )}
