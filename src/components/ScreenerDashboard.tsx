@@ -31,7 +31,6 @@ export default function ScreenerDashboard() {
   const [alerts, setAlerts] = useState<PairAlert[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // ✅ Fetch Data and Listen for Real-Time Updates from Firestore
   useEffect(() => {
     const q = query(collection(db, "webhooks"), orderBy("timestamp", "desc"));
     const unsubscribe = onSnapshot(q, (querySnapshot) => {
@@ -52,10 +51,9 @@ export default function ScreenerDashboard() {
       setLoading(false);
     });
 
-    return () => unsubscribe(); // ✅ Cleanup Listener on Component Unmount
+    return () => unsubscribe();
   }, []);
 
-  // ✅ Delete an Alert from Firestore
   const handleDelete = async (id: string) => {
     try {
       await deleteDoc(doc(db, "webhooks", id));
@@ -65,7 +63,6 @@ export default function ScreenerDashboard() {
     }
   };
 
-  // ✅ Timer Formatting Function
   const formatTimer = (timestamp: number) => {
     const now = Date.now();
     const elapsed = Math.max(0, Math.floor((now - timestamp) / 1000));
@@ -87,7 +84,7 @@ export default function ScreenerDashboard() {
 
   return (
     <div style={{
-      backgroundColor: "#1e1e1e", // ✅ Dark Background (ChatGPT Style)
+      backgroundColor: "#1e1e1e",
       color: "#ffffff",
       minHeight: "100vh",
       padding: "24px",
@@ -97,18 +94,17 @@ export default function ScreenerDashboard() {
       alignItems: "center",
     }}>
       <h1 style={{ fontSize: "28px", fontWeight: "bold", marginBottom: "24px" }}>
-        🚀 Liquidity Screener
+        🚀 Liquidity Screener 🚀
       </h1>
 
-      {/* ✅ Loading State or No Alerts */}
       {loading ? (
         <p>Loading Data...</p>
       ) : alerts.length === 0 ? (
-        <p>No Liquidity Events Yet</p>
+        <p>No Liquidity Events Today</p>
       ) : (
         <div style={{
           display: "grid",
-          gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))", // ✅ Responsive Grid
+          gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))",
           gap: "16px",
           maxWidth: "800px",
           width: "100%",
@@ -117,7 +113,7 @@ export default function ScreenerDashboard() {
             <div
               key={alert.id}
               style={{
-                backgroundColor: "#f9f9f9", // ✅ Off-white Card Background
+                backgroundColor: "#f9f9f9",
                 borderRadius: "8px",
                 padding: "20px",
                 boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
@@ -147,39 +143,43 @@ export default function ScreenerDashboard() {
                 ❌
               </button>
 
-              {/* ✅ Name and Exchange */}
+              {/* ✅ Pair Name */}
+              <div style={{
+                fontSize: "20px",
+                fontWeight: "bold",
+                color: "#111827",
+                marginBottom: "12px",
+              }}>
+                {alert.name}
+              </div>
+
+              {/* ✅ Level and Exchange on the Same Row */}
               <div style={{
                 display: "flex",
                 justifyContent: "space-between",
                 alignItems: "center",
                 marginBottom: "12px",
               }}>
-                <div style={{ fontSize: "20px", fontWeight: "bold", color: "#111827" }}>
-                  {alert.name}
+                <div style={{
+                  display: "inline-block",
+                  padding: "4px 12px",
+                  borderRadius: "12px",
+                  backgroundColor: levelColors[alert.level] || "#6b7280",
+                  color: "#ffffff",
+                  fontSize: "12px",
+                }}>
+                  {alert.level}
                 </div>
                 <div style={{
                   fontSize: "16px",
                   fontWeight: "bold",
-                  color: "#60a5fa" // ✅ Light Blue for Exchange
+                  color: "#60a5fa",
                 }}>
                   {alert.exchange}
                 </div>
               </div>
 
-              {/* ✅ Level Badge */}
-              <div style={{
-                display: "inline-block",
-                padding: "4px 12px",
-                borderRadius: "12px",
-                backgroundColor: levelColors[alert.level] || "#6b7280",
-                color: "#ffffff",
-                fontSize: "12px",
-                marginBottom: "8px",
-              }}>
-                {alert.level}
-              </div>
-
-              {/* ✅ Timer Display */}
+              {/* ✅ Timer */}
               <div style={{ fontSize: "14px", color: "#555555" }}>
                 ⏱️ {formatTimer(alert.timestamp)}
               </div>
