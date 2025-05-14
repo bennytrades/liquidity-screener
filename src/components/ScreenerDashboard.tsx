@@ -1,17 +1,17 @@
 import React, { useState, useEffect } from "react";
 import { db } from "../firebaseConfig";
-import { collection, query, orderBy, onSnapshot } from "firebase/firestore";
+import { collection, query, orderBy, onSnapshot, deleteDoc, doc } from "firebase/firestore";
 
 type PairAlert = {
   id: string;
   name: string;
-  level: 
-    "PDH" | "PDL" | 
-    "PWH" | "PWL" | 
-    "iHOD" | "iLOD" | 
-    "1H LVL" | "4H LVL" | 
-    "GAP FILLED" | 
-    "UNKNOWN";
+  level:
+    | "PDH" | "PDL"
+    | "PWH" | "PWL"
+    | "iHOD" | "iLOD"
+    | "1H LVL" | "4H LVL"
+    | "GAP FILLED"
+    | "UNKNOWN";
   timestamp: number;
   checked?: boolean;
 };
@@ -34,7 +34,7 @@ const LOCAL_STORAGE_KEY = "liquidity_screener_checked";
 export default function ScreenerDashboard() {
   const [alerts, setAlerts] = useState<PairAlert[]>([]);
   const [loading, setLoading] = useState(true);
-  const [tick, setTick] = useState(0); // Used for re-rendering the timer
+  const [tick, setTick] = useState(0);
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -50,14 +50,14 @@ export default function ScreenerDashboard() {
     const unsubscribe = onSnapshot(q, (querySnapshot) => {
       const fetchedAlerts: PairAlert[] = [];
 
-      querySnapshot.forEach((doc) => {
-        const data = doc.data();
+      querySnapshot.forEach((docItem) => {
+        const data = docItem.data();
         fetchedAlerts.push({
-          id: doc.id,
+          id: docItem.id,
           name: data.name,
           level: data.level,
           timestamp: data.timestamp?.seconds ? data.timestamp.seconds * 1000 : Date.now(),
-          checked: savedChecked[doc.id] || false,
+          checked: savedChecked[docItem.id] || false,
         });
       });
 
@@ -84,26 +84,34 @@ export default function ScreenerDashboard() {
     });
   };
 
+  const deleteAlert = async (id: string) => {
+    try {
+      await deleteDoc(doc(db, "webhooks", id));
+      setAlerts((prev) => prev.filter((alert) => alert.id !== id));
+    } catch (error) {
+      console.error("Error deleting alert:", error);
+    }
+  };
+
   const formatTimer = (timestamp: number) => {
-  const elapsed = Math.floor((Date.now() - timestamp) / 1000);
-  const hours = Math.floor(elapsed / 3600);
-  const minutes = Math.floor((elapsed % 3600) / 60);
-  const seconds = elapsed % 60;
+    const elapsed = Math.floor((Date.now() - timestamp) / 1000);
+    const hours = Math.floor(elapsed / 3600);
+    const minutes = Math.floor((elapsed % 3600) / 60);
+    const seconds = elapsed % 60;
 
-  const formattedHours = hours > 0 ? `${hours}:` : "";
-  const formattedMinutes = String(minutes).padStart(2, "0");
+    const formattedHours = hours > 0 ? `${hours}:` : "";
+    const formattedMinutes = String(minutes).padStart(2, "0");
 
-  if (elapsed < 60) {
-    const formattedSeconds = String(seconds).padStart(2, "0");
-    return `${formattedHours}${formattedMinutes}:${formattedSeconds}`;
-  } else {
-    return `${formattedHours}${formattedMinutes} mins ago`;
-  }
-};
-
+    if (elapsed < 60) {
+      const formattedSeconds = String(seconds).padStart(2, "0");
+      return `${formattedHours}${formattedMinutes}:${formattedSeconds}`;
+    } else {
+      return `${formattedHours}${formattedMinutes} mins ago`;
+    }
+  };
 
   const pageStyle = {
-    backgroundColor: "#1e1e1e", // ChatGPT-like soft grey
+    backgroundColor: "#1e1e1e",
     color: "#ffffff",
     minHeight: "100vh",
     padding: "24px",
@@ -127,9 +135,19 @@ export default function ScreenerDashboard() {
     padding: "20px",
     boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
     transition: "transform 0.2s ease",
+    position: "relative" as const,
     display: "flex",
     justifyContent: "space-between",
     alignItems: "center",
+  };
+
+  const closeButtonStyle = {
+    position: "absolute" as const,
+    top: "8px",
+    right: "12px",
+    fontSize: "18px",
+    color: "#999999",
+    cursor: "pointer",
   };
 
   const badgeStyle = (level: string) => ({
@@ -174,6 +192,13 @@ export default function ScreenerDashboard() {
               onMouseEnter={(e) => (e.currentTarget.style.transform = "scale(1.05)")}
               onMouseLeave={(e) => (e.currentTarget.style.transform = "scale(1)")}
             >
+              <span
+                style={closeButtonStyle}
+                onClick={() => deleteAlert(alert.id)}
+                title="Delete Alert"
+              >
+                ❌
+              </span>
               <div>
                 <div style={{ fontSize: "20px", fontWeight: "bold", color: "#111827" }}>
                   {alert.name}
