@@ -1,46 +1,111 @@
-# Getting Started with Create React App
+# 📈 Liquidity Screener Dashboard
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+A real-time liquidity screener built with **React**, **Firebase Firestore**, and **Vercel**. This tool helps traders monitor when crypto pairs hit key liquidity levels and instantly receive Discord alerts.  
 
-## Available Scripts
+---
 
-In the project directory, you can run:
+## 🚀 Features
 
-### `npm start`
+- Real-Time Updates (Firestore onSnapshot listener)  
+- Tracks Key Levels: `PDH`, `PDL`, `PWH`, `PWL`, `iHOD`, `iLOD`, `1H LVL`, `4H LVL`, `GAP FILLED`  
+- Color-coded Level Badges  
+- Discord Alerts on New Events  
+- Card Timers Showing Time Since Alert  
+- Clean, Responsive UI  
+- Ability to Manually Remove (Dismiss) Alerts  
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in the browser.
+---
 
-The page will reload if you make edits.\
-You will also see any lint errors in the console.
+## 📚 How It Works
 
-### `npm test`
+1. **TradingView Webhook Alerts**  
+   - You set up alerts in TradingView using this JSON format:
+     ```json
+     {
+       "name": "{{ticker}}",
+       "level": "PDH",
+       "exchange": "{{exchange}}"
+     }
+     ```
+   - The webhook URL you provide is your deployed Vercel API endpoint:  
+     `https://<your-vercel-app>.vercel.app/api/webhook`
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+2. **Vercel Serverless API**  
+   - The API (`api/webhook.js`) receives incoming webhooks and:
+     - Stores the alert in Firestore.
+     - Sends a Discord message using a configured webhook.
 
-### `npm run build`
+3. **React Frontend**  
+   - Hosted on Vercel, connects directly to Firestore to listen for real-time data.
+   - Displays liquidity events as cards with time counters.
+   - Allows manual deletion of events directly from the dashboard.
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+4. **Discord Alerts**  
+   - Alerts are sent via Discord webhooks in this format:
+     ```
+     🚨 Liquidity Event  
+     Pair: BTCUSDT  
+     Level: PDH  
+     
+     Open the chart and look for reversal signs!
+     ```
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+---
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+## 📦 Tech Stack
 
-### `npm run eject`
+- React (with plain CSS for styling)
+- Firebase Firestore (Database & Realtime Updates)
+- Vercel (Hosting + Serverless API Functions)
+- Discord Webhooks (Notifications)
 
-**Note: this is a one-way operation. Once you `eject`, you can’t go back!**
+---
 
-If you aren’t satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+## 🔧 Setup Instructions
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you’re on your own.
+1. **Clone the Repository**
+   ```bash
+   git clone https://github.com/yourusername/liquidity-screener.git
+   cd liquidity-screener
+   ```
 
-You don’t have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn’t feel obligated to use this feature. However we understand that this tool wouldn’t be useful if you couldn’t customize it when you are ready for it.
+2. **Install Dependencies**
+   ```bash
+   npm install
+   ```
 
-## Learn More
+3. **Environment Variables**  
+   Create a `.env` file in the root of your project and include:
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+   ```env
+   REACT_APP_FIREBASE_API_KEY=your_firebase_api_key
+   REACT_APP_FIREBASE_AUTH_DOMAIN=your_firebase_auth_domain
+   REACT_APP_FIREBASE_PROJECT_ID=your_firebase_project_id
+   REACT_APP_FIREBASE_STORAGE_BUCKET=your_firebase_storage_bucket
+   REACT_APP_FIREBASE_MESSAGING_SENDER_ID=your_messaging_sender_id
+   REACT_APP_FIREBASE_APP_ID=your_firebase_app_id
+   DISCORD_WEBHOOK_URL=https://discord.com/api/webhooks/your_webhook_id
+   FIREBASE_SERVICE_ACCOUNT={"your_service_account_json"}
+   ```
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+4. **Deploy to Vercel**
+   - Push your repository to GitHub.
+   - Connect the repo to Vercel.
+   - Set the above environment variables in Vercel's **Environment Variables** settings.
+
+---
+
+## ✅ Roadmap
+
+- [x] Real-time Webhook Storage  
+- [x] Discord Notifications  
+- [x] Manual Card Dismissal  
+- [x] Color-Coded Liquidity Levels  
+- [ ] Push Notifications / Browser Alerts (Optional)  
+- [ ] Historical Logs View  
+
+---
+
+## 📬 Contact & Contributions
+
+Have ideas or want to contribute? Open a PR or reach out via Discord!
