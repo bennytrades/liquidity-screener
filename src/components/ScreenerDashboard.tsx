@@ -6,6 +6,7 @@ type PairAlert = {
   id: string;
   name: string;
   level: "PDH" | "PDL" | "PWH" | "PWL" | "UNKNOWN";
+  timestamp: number;
   checked?: boolean;
 };
 
@@ -22,6 +23,15 @@ const LOCAL_STORAGE_KEY = "liquidity_screener_checked";
 export default function ScreenerDashboard() {
   const [alerts, setAlerts] = useState<PairAlert[]>([]);
   const [loading, setLoading] = useState(true);
+  const [tick, setTick] = useState(0); // Used to trigger re-render every second
+
+  // Trigger re-render every second for live timer updates
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setTick((prev) => prev + 1);
+    }, 1000);
+    return () => clearInterval(interval);
+  }, []);
 
   useEffect(() => {
     const savedChecked = JSON.parse(localStorage.getItem(LOCAL_STORAGE_KEY) || "{}");
@@ -36,6 +46,7 @@ export default function ScreenerDashboard() {
           id: doc.id,
           name: data.name,
           level: data.level,
+          timestamp: data.timestamp?.seconds ? data.timestamp.seconds * 1000 : Date.now(),
           checked: savedChecked[doc.id] || false,
         });
       });
@@ -61,6 +72,13 @@ export default function ScreenerDashboard() {
       localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(checkedState));
       return updated;
     });
+  };
+
+  const formatTimer = (timestamp: number) => {
+    const elapsed = Math.floor((Date.now() - timestamp) / 1000);
+    const minutes = String(Math.floor(elapsed / 60)).padStart(2, "0");
+    const seconds = String(elapsed % 60).padStart(2, "0");
+    return `${minutes}:${seconds}`;
   };
 
   const pageStyle = {
@@ -110,6 +128,12 @@ export default function ScreenerDashboard() {
     transition: "color 0.2s ease",
   });
 
+  const timerStyle = {
+    fontSize: "14px",
+    color: "#555555",
+    marginTop: "8px",
+  };
+
   return (
     <div style={pageStyle}>
       <h1 style={{ fontSize: "28px", fontWeight: "bold", marginBottom: "24px" }}>
@@ -133,7 +157,8 @@ export default function ScreenerDashboard() {
                 <div style={{ fontSize: "20px", fontWeight: "bold", color: "#111827" }}>
                   {alert.name}
                 </div>
-                <div style={badgeStyle(alert.level)}>Level: {alert.level}</div>
+                <div style={badgeStyle(alert.level)}>{alert.level}</div>
+                <div style={timerStyle}>⏱️ {formatTimer(alert.timestamp)}</div>
               </div>
               <div onClick={() => toggleChecked(alert.id)} style={heartStyle(alert.checked!)}>
                 {alert.checked ? "❤️" : "🤍"}
