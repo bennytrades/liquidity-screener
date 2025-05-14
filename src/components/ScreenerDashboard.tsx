@@ -33,12 +33,16 @@ export default function ScreenerDashboard() {
       const fetchedAlerts: PairAlert[] = [];
       querySnapshot.forEach((docItem) => {
         const data = docItem.data();
+        const timestamp = data.timestamp?.seconds
+          ? data.timestamp.seconds * 1000
+          : Date.now(); // Fallback if timestamp missing
+
         fetchedAlerts.push({
           id: docItem.id,
           name: data.name,
           level: data.level,
           exchange: data.exchange || "Unknown",
-          timestamp: data.timestamp?.seconds ? data.timestamp.seconds * 1000 : Date.now(),
+          timestamp,
         });
       });
       setAlerts(fetchedAlerts);
@@ -58,7 +62,9 @@ export default function ScreenerDashboard() {
   };
 
   const formatTimer = (timestamp: number) => {
-    const elapsed = Math.floor((Date.now() - timestamp) / 1000);
+    const now = Date.now();
+    const elapsed = Math.max(0, Math.floor((now - timestamp) / 1000)); // Ensure non-negative
+
     const hours = Math.floor(elapsed / 3600);
     const minutes = Math.floor((elapsed % 3600) / 60);
     const seconds = elapsed % 60;
