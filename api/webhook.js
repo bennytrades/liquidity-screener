@@ -15,9 +15,10 @@ const db = admin.firestore();
 const sendDiscordAlert = async (name, level) => {
   const webhookUrl = process.env.DISCORD_WEBHOOK_URL;
 
-  const message = {
-    content: `🚨 **New Liquidity Event**\nPair: **${name}**\nLevel: **${level}**`,
-  };
+ const message = {
+  content: `🚨 **Liquidity Event**\n**Pair:** ${name}\n**Level:** ${level}\n\n📌 *Tip: Look for Inversion FVG after sweep confirmation. Enter on pullback to IFVG zone.*`,
+};
+
 
   try {
     await fetch(webhookUrl, {
