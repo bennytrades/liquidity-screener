@@ -9,11 +9,11 @@ type PairAlert = {
 };
 
 const levelColors: Record<string, string> = {
-  PDH: "bg-green-500",
-  PDL: "bg-blue-500",
-  PWH: "bg-yellow-500",
-  PWL: "bg-red-500",
-  UNKNOWN: "bg-gray-500",
+  PDH: "#22c55e",      // Green
+  PDL: "#3b82f6",      // Blue
+  PWH: "#facc15",      // Yellow
+  PWL: "#ef4444",      // Red
+  UNKNOWN: "#6b7280",  // Gray
 };
 
 export default function ScreenerDashboard() {
@@ -42,41 +42,60 @@ export default function ScreenerDashboard() {
     return () => unsubscribe();
   }, []);
 
-  return (
-    <div className="min-h-screen bg-gray-900 text-white p-6">
-      <header className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-extrabold tracking-wide">
-          🚀 Liquidity Screener
-        </h1>
-        <span className="text-gray-400">
-          {loading
-            ? "Loading..."
-            : alerts.length === 0
-            ? "No Events Yet"
-            : `${alerts.length} ${alerts.length === 1 ? "Event" : "Events"}`}
-        </span>
-      </header>
+  const pageStyle = {
+    backgroundColor: "#111827",
+    color: "#ffffff",
+    minHeight: "100vh",
+    padding: "24px",
+    fontFamily: "Arial, sans-serif",
+  };
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {alerts.map((alert) => (
+  const cardStyle = {
+    backgroundColor: "#1f2937",
+    borderRadius: "8px",
+    padding: "20px",
+    marginBottom: "16px",
+    boxShadow: "0 4px 12px rgba(0,0,0,0.2)",
+    transition: "transform 0.2s ease",
+  };
+
+  const cardHoverStyle = {
+    transform: "scale(1.05)",
+  };
+
+  const badgeStyle = (level: string) => ({
+    display: "inline-block",
+    padding: "4px 12px",
+    borderRadius: "12px",
+    backgroundColor: levelColors[level] || "#6b7280",
+    color: "#ffffff",
+    fontSize: "12px",
+    marginTop: "8px",
+  });
+
+  return (
+    <div style={pageStyle}>
+      <h1 style={{ fontSize: "28px", fontWeight: "bold", marginBottom: "24px" }}>
+        🚀 Liquidity Screener
+      </h1>
+
+      {loading ? (
+        <p>Loading Data...</p>
+      ) : alerts.length === 0 ? (
+        <p>No Liquidity Events Yet</p>
+      ) : (
+        alerts.map((alert) => (
           <div
             key={alert.id}
-            className="bg-gray-800 rounded-lg shadow-lg p-6 transition transform hover:scale-105 hover:shadow-2xl duration-300 ease-in-out flex items-center justify-between"
+            style={cardStyle}
+            onMouseEnter={(e) => (e.currentTarget.style.transform = "scale(1.05)")}
+            onMouseLeave={(e) => (e.currentTarget.style.transform = "scale(1)")}
           >
-            <div>
-              <div className="text-xl font-bold">{alert.name}</div>
-              <div className="text-sm text-gray-400">Level Hit:</div>
-              <span
-                className={`inline-block mt-1 px-3 py-1 text-xs font-semibold text-white rounded-full ${
-                  levelColors[alert.level] || "bg-gray-500"
-                }`}
-              >
-                {alert.level}
-              </span>
-            </div>
+            <div style={{ fontSize: "20px", fontWeight: "bold" }}>{alert.name}</div>
+            <div style={badgeStyle(alert.level)}>Level: {alert.level}</div>
           </div>
-        ))}
-      </div>
+        ))
+      )}
     </div>
   );
 }
