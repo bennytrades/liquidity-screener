@@ -5,18 +5,30 @@ import { collection, query, orderBy, onSnapshot } from "firebase/firestore";
 type PairAlert = {
   id: string;
   name: string;
-  level: "PDH" | "PDL" | "PWH" | "PWL" | "UNKNOWN";
+  level: 
+    "PDH" | "PDL" | 
+    "PWH" | "PWL" | 
+    "iHOD" | "iLOD" | 
+    "1H LVL" | "4H LVL" | 
+    "GAP FILLED" | 
+    "UNKNOWN";
   timestamp: number;
   checked?: boolean;
 };
 
 const levelColors: Record<string, string> = {
-  PDH: "#22c55e",
-  PDL: "#3b82f6",
-  PWH: "#facc15",
-  PWL: "#ef4444",
-  UNKNOWN: "#6b7280",
+  PDH: "#000000",          // Black
+  PDL: "#000000",          // Black
+  PWH: "#22c55e",          // Green
+  PWL: "#22c55e",          // Green
+  iHOD: "#FFA500",         // Orange
+  iLOD: "#FFA500",         // Orange
+  "1H LVL": "#FF0000",     // Red
+  "4H LVL": "#FF0000",     // Red
+  "GAP FILLED": "#3b82f6", // Blue
+  UNKNOWN: "#6b7280",      // Default Grey
 };
+
 
 const LOCAL_STORAGE_KEY = "liquidity_screener_checked";
 
