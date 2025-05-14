@@ -6,7 +6,7 @@ type PairAlert = {
   id: string;
   name: string;
   level: "PDH" | "PDL" | "PWH" | "PWL" | "UNKNOWN";
-  checked?: boolean; // For local UI state
+  checked?: boolean;
 };
 
 const levelColors: Record<string, string> = {
@@ -17,13 +17,16 @@ const levelColors: Record<string, string> = {
   UNKNOWN: "#6b7280",
 };
 
+const LOCAL_STORAGE_KEY = "liquidity_screener_checked";
+
 export default function ScreenerDashboard() {
   const [alerts, setAlerts] = useState<PairAlert[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const q = query(collection(db, "webhooks"), orderBy("timestamp", "desc"));
+    const savedChecked = JSON.parse(localStorage.getItem(LOCAL_STORAGE_KEY) || "{}");
 
+    const q = query(collection(db, "webhooks"), orderBy("timestamp", "desc"));
     const unsubscribe = onSnapshot(q, (querySnapshot) => {
       const fetchedAlerts: PairAlert[] = [];
 
@@ -33,7 +36,7 @@ export default function ScreenerDashboard() {
           id: doc.id,
           name: data.name,
           level: data.level,
-          checked: false,
+          checked: savedChecked[doc.id] || false,
         });
       });
 
@@ -45,27 +48,35 @@ export default function ScreenerDashboard() {
   }, []);
 
   const toggleChecked = (id: string) => {
-    setAlerts((prev) =>
-      prev.map((alert) =>
+    setAlerts((prev) => {
+      const updated = prev.map((alert) =>
         alert.id === id ? { ...alert, checked: !alert.checked } : alert
-      )
-    );
+      );
+
+      const checkedState = updated.reduce<Record<string, boolean>>((acc, alert) => {
+        acc[alert.id] = !!alert.checked;
+        return acc;
+      }, {});
+
+      localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(checkedState));
+      return updated;
+    });
   };
 
   const pageStyle = {
-    backgroundColor: "#111827",
-    color: "#ffffff",
+    backgroundColor: "#f0f0f0",
+    color: "#111827",
     minHeight: "100vh",
     padding: "24px",
     fontFamily: "Arial, sans-serif",
   };
 
   const cardStyle = {
-    backgroundColor: "#1f2937",
+    backgroundColor: "#f9f9f9", // Off-white background
     borderRadius: "8px",
     padding: "20px",
     marginBottom: "16px",
-    boxShadow: "0 4px 12px rgba(0,0,0,0.2)",
+    boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
     transition: "transform 0.2s ease",
     display: "flex",
     justifyContent: "space-between",
@@ -84,7 +95,7 @@ export default function ScreenerDashboard() {
 
   const heartStyle = (checked: boolean) => ({
     fontSize: "24px",
-    color: checked ? "#ef4444" : "#ffffff",
+    color: checked ? "#ef4444" : "#888888",
     cursor: "pointer",
     transition: "color 0.2s ease",
   });
