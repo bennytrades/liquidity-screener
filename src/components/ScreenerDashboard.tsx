@@ -35,7 +35,7 @@ export default function ScreenerDashboard() {
         const data = docItem.data();
         const timestamp = data.timestamp?.seconds
           ? data.timestamp.seconds * 1000
-          : Date.now(); // Fallback if timestamp missing
+          : Date.now();
 
         fetchedAlerts.push({
           id: docItem.id,
@@ -63,7 +63,7 @@ export default function ScreenerDashboard() {
 
   const formatTimer = (timestamp: number) => {
     const now = Date.now();
-    const elapsed = Math.max(0, Math.floor((now - timestamp) / 1000)); // Ensure non-negative
+    const elapsed = Math.max(0, Math.floor((now - timestamp) / 1000));
 
     const hours = Math.floor(elapsed / 3600);
     const minutes = Math.floor((elapsed % 3600) / 60);
@@ -139,6 +139,8 @@ export default function ScreenerDashboard() {
               >
                 ✖
               </button>
+
+              {/* Name and Exchange on the Same Row */}
               <div style={{
                 display: "flex",
                 justifyContent: "space-between",
@@ -149,26 +151,28 @@ export default function ScreenerDashboard() {
                   {alert.name}
                 </div>
                 <div style={{ 
-  fontSize: "16px", 
-  fontWeight: "bold", 
-  color: "#60a5fa" // Light blue (Tailwind's blue-400)
-}}>
-  {alert.exchange}
-</div>
-
+                  fontSize: "16px", 
+                  fontWeight: "bold", 
+                  color: "#60a5fa" // Light blue color for Exchange
+                }}>
+                  {alert.exchange}
+                </div>
               </div>
-<div style={{
-  display: "inline-block",
-  padding: "4px 12px",
-  borderRadius: "12px",
-  backgroundColor: levelColors[alert.level] || "#6b7280",
-  color: "#ffffff",
-  fontSize: "12px",
-  marginBottom: "8px",
-}}>
-  {alert.level}
-</div>
 
+              {/* Level Badge */}
+              <div style={{
+                display: "inline-block",
+                padding: "4px 12px",
+                borderRadius: "12px",
+                backgroundColor: levelColors[alert.level] || "#6b7280",
+                color: "#ffffff",
+                fontSize: "12px",
+                marginBottom: "8px",
+              }}>
+                {alert.level}
+              </div>
+
+              {/* Timer */}
               <div style={{ fontSize: "14px", color: "#555555" }}>
                 ⏱️ {formatTimer(alert.timestamp)}
               </div>
