@@ -17,27 +17,25 @@ type PairAlert = {
 };
 
 const levelColors: Record<string, string> = {
-  PDH: "#000000",          // Black
-  PDL: "#000000",          // Black
-  PWH: "#22c55e",          // Green
-  PWL: "#22c55e",          // Green
-  iHOD: "#FFA500",         // Orange
-  iLOD: "#FFA500",         // Orange
-  "1H LVL": "#FF0000",     // Red
-  "4H LVL": "#FF0000",     // Red
-  "GAP FILLED": "#3b82f6", // Blue
-  UNKNOWN: "#6b7280",      // Default Grey
+  PDH: "#000000",
+  PDL: "#000000",
+  PWH: "#22c55e",
+  PWL: "#22c55e",
+  iHOD: "#FFA500",
+  iLOD: "#FFA500",
+  "1H LVL": "#FF0000",
+  "4H LVL": "#FF0000",
+  "GAP FILLED": "#3b82f6",
+  UNKNOWN: "#6b7280",
 };
-
 
 const LOCAL_STORAGE_KEY = "liquidity_screener_checked";
 
 export default function ScreenerDashboard() {
   const [alerts, setAlerts] = useState<PairAlert[]>([]);
   const [loading, setLoading] = useState(true);
-  const [tick, setTick] = useState(0); // Used to trigger re-render every second
+  const [tick, setTick] = useState(0); // Used for re-rendering the timer
 
-  // Trigger re-render every second for live timer updates
   useEffect(() => {
     const interval = setInterval(() => {
       setTick((prev) => prev + 1);
@@ -88,14 +86,23 @@ export default function ScreenerDashboard() {
 
   const formatTimer = (timestamp: number) => {
     const elapsed = Math.floor((Date.now() - timestamp) / 1000);
-    const hours = String(Math.floor(elapsed / 3600)).padStart(2, "0");
-    const minutes = String(Math.floor((elapsed % 3600) / 60)).padStart(2, "0");
-    const seconds = String(elapsed % 60).padStart(2, "0");
-    return `${hours}:${minutes}:${seconds}`;
+    const hours = Math.floor(elapsed / 3600);
+    const minutes = Math.floor((elapsed % 3600) / 60);
+    const seconds = elapsed % 60;
+
+    const formattedHours = hours > 0 ? `${hours}:` : "";
+    const formattedMinutes = String(minutes).padStart(2, "0");
+
+    if (elapsed < 60) {
+      const formattedSeconds = String(seconds).padStart(2, "0");
+      return `${formattedHours}${formattedMinutes}:${formattedSeconds}`;
+    } else {
+      return `${formattedHours}${formattedMinutes}`;
+    }
   };
 
   const pageStyle = {
-    backgroundColor: "#1e1e1e", // ChatGPT-like soft dark grey
+    backgroundColor: "#1e1e1e", // ChatGPT-like soft grey
     color: "#ffffff",
     minHeight: "100vh",
     padding: "24px",
