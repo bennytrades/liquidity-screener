@@ -1,4 +1,5 @@
 import admin from 'firebase-admin';
+import fetch from 'node-fetch'; // Add this if not already available in your environment
 
 if (!admin.apps.length) {
   const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
@@ -9,6 +10,26 @@ if (!admin.apps.length) {
 }
 
 const db = admin.firestore();
+
+// ✅ Discord Alert Function
+const sendDiscordAlert = async (name, level) => {
+  const webhookUrl = process.env.DISCORD_WEBHOOK_URL;
+
+  const message = {
+    content: `🚨 **New Liquidity Event**\nPair: **${name}**\nLevel: **${level}**`,
+  };
+
+  try {
+    await fetch(webhookUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(message),
+    });
+    console.log('✅ Discord alert sent!');
+  } catch (error) {
+    console.error('❌ Failed to send Discord alert:', error);
+  }
+};
 
 export default async function handler(req, res) {
   if (req.method === 'POST') {
@@ -25,9 +46,12 @@ export default async function handler(req, res) {
         timestamp: admin.firestore.FieldValue.serverTimestamp(),
       });
 
-      return res.status(200).json({ success: true, message: 'Webhook stored successfully.' });
+      // ✅ Only send Discord alert after Firestore save succeeds
+      await sendDiscordAlert(name, level);
+
+      return res.status(200).json({ success: true, message: 'Webhook stored and Discord alert sent.' });
     } catch (error) {
-      console.error('Error storing webhook:', error);
+      console.error('❌ Error handling webhook:', error);
       return res.status(500).json({ success: false, message: 'Internal Server Error.' });
     }
   } else {
