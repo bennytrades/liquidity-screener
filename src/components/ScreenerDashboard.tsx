@@ -63,24 +63,27 @@ export default function ScreenerDashboard() {
     }
   };
 
-  const formatTimer = (timestamp: number) => {
-    const now = Date.now();
-    const elapsed = Math.max(0, Math.floor((now - timestamp) / 1000));
+const formatTimer = (timestamp: number) => {
+  const now = Date.now();
+  const elapsed = Math.max(0, Math.floor((now - timestamp) / 1000)); // Elapsed time in seconds
 
-    const hours = Math.floor(elapsed / 3600);
-    const minutes = Math.floor((elapsed % 3600) / 60);
-    const seconds = elapsed % 60;
+  const hours = Math.floor(elapsed / 3600);
+  const minutes = Math.floor((elapsed % 3600) / 60);
+  const seconds = elapsed % 60;
 
-    const formattedHours = hours > 0 ? `${hours}:` : "";
-    const formattedMinutes = String(minutes).padStart(2, "0");
+  const formattedHours = hours > 0 ? `${hours}:` : "";
+  const formattedMinutes = String(minutes).padStart(2, "0");
 
-    if (elapsed < 60) {
-      const formattedSeconds = String(seconds).padStart(2, "0");
-      return `${formattedHours}${formattedMinutes}:${formattedSeconds}`;
-    } else {
-      return `${formattedHours}${formattedMinutes} mins ago`;
-    }
-  };
+  if (elapsed < 60) {
+    // Show full H:MM:SS if under 1 minute
+    const formattedSeconds = String(seconds).padStart(2, "0");
+    return `${formattedHours}${formattedMinutes}:${formattedSeconds}`;
+  } else {
+    // Show H:MM mins ago once over 60 seconds, hide seconds
+    return `${formattedHours}${formattedMinutes} mins ago`;
+  }
+};
+
 
   return (
     <div style={{
