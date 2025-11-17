@@ -23,15 +23,9 @@ const sendDiscordAlert = async (name, level, exchange) => {
 
   // Construct the message payload in Discord's expected format
   const message = {
-    content: `:money_mouth: **Liquidity Event** :money_mouth: \n\n` +
+    content: `**Critical Level Hit**\n\n` +
              `Pair:** ${name}**\n` +
-             `Level:** ${level}**\n` +
-             `Exchange:** ${exchange}**\n\n` +
-             `📌 *Tip: Open the pair and look for reversal signs after liquidity sweep.*\n` +
-             `Step 1: IFVG confirmation\n` +
-             `Step 2: High Volume\n` +
-             `Step 3: FVG Overlapping IFVG\n` +
-             `Step 4: Break Even at 1:1*`,
+             `Level:** ${level}**\n`,
   };
 
   try {
