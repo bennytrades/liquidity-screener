@@ -4,10 +4,8 @@ import fetch from 'node-fetch';    // Used to send HTTP requests (for Discord We
 
 // ✅ Initialize Firebase Admin SDK if not already initialized
 if (!admin.apps.length) {
-  // Parse the Firebase service account JSON from environment variable
   const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
 
-  // Initialize Firebase with admin privileges
   admin.initializeApp({
     credential: admin.credential.cert(serviceAccount),
   });
@@ -16,22 +14,36 @@ if (!admin.apps.length) {
 // ✅ Create a Firestore Database Instance
 const db = admin.firestore();
 
+// ✅ Helper: Get current New York time as "H:MM am/pm"
+const getNewYorkTimeString = () => {
+  const now = new Date();
+
+  const formatter = new Intl.DateTimeFormat('en-US', {
+    timeZone: 'America/New_York',
+    hour: 'numeric',
+    minute: '2-digit',
+    hour12: true,
+  });
+
+  // Example output: "9:05 PM" → we’ll lower-case "pm"
+  return formatter.format(now).toLowerCase(); // "9:05 pm"
+};
+
 // ✅ Discord Alert Function
-const sendDiscordAlert = async (name, level, time) => {
-  // Get the Discord Webhook URL from environment variables
+const sendDiscordAlert = async (name, level) => {
   const webhookUrl = process.env.DISCORD_WEBHOOK_URL;
 
-  // Construct the message payload in Discord's expected format
+  const nyTime = getNewYorkTimeString();
+
   const message = {
-    content: `**Critical Level Hit**\n\n` +
-             `Pair:** ${name}**\n` +
-             `Level:** ${level}**\n` +
-             `Time Now (NY):** ${time}**`,
-            
+    content:
+      `**Critical Level Hit**\n\n` +
+      `Pair: **${name}**\n` +
+      `Level: **${level}**\n` +
+      `Time Now (NY): **${nyTime}**`,
   };
 
   try {
-    // Send POST request to Discord webhook
     await fetch(webhookUrl, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -39,52 +51,46 @@ const sendDiscordAlert = async (name, level, time) => {
     });
     console.log("✅ Discord alert sent!");
   } catch (error) {
-    // Handle any errors sending the alert
     console.error("❌ Failed to send Discord alert:", error);
   }
 };
 
 // ✅ Main API Handler (For Vercel Serverless Function)
 export default async function handler(req, res) {
-  // Only accept POST requests (reject GET, PUT, etc.)
   if (req.method === 'POST') {
-    // Extract values from the incoming webhook request body
-    const { name, level, time } = req.body;
+    // Expecting ONLY: name, level
+    const { name, level } = req.body;
 
-    // Validate required fields are present
-    if (!name || !level || !time) {
-      return res.status(400).json({ 
-        success: false, 
-        message: 'Missing name, level, or time.' 
+    if (!name || !level) {
+      return res.status(400).json({
+        success: false,
+        message: 'Missing name or level.',
       });
     }
 
     try {
-      // Store the incoming webhook data into Firestore
+      // You can optionally also store NY time string if you want
+      const nyTime = getNewYorkTimeString();
+
       const docRef = await db.collection('webhooks').add({
         name,
         level,
-        time, // Use lowercase to keep it consistent
-        timestamp: admin.firestore.FieldValue.serverTimestamp(), // Firestore server timestamp
+        nyTime, // optional, but nice if you want to show it in the UI
+        timestamp: admin.firestore.FieldValue.serverTimestamp(),
       });
 
-      // After saving, trigger the Discord alert
-      await sendDiscordAlert(name, level, time);
+      // Send Discord alert with NY time
+      await sendDiscordAlert(name, level);
 
-      // Respond to TradingView confirming success and return Firestore document ID
       return res.status(200).json({ success: true, id: docRef.id });
-
     } catch (error) {
-      // Handle Firestore write errors
       console.error('❌ Error storing webhook:', error);
-      return res.status(500).json({ 
-        success: false, 
-        message: 'Internal Server Error.' 
+      return res.status(500).json({
+        success: false,
+        message: 'Internal Server Error.',
       });
     }
-
   } else {
-    // If method is not POST, respond with Method Not Allowed
     return res.status(405).json({ message: 'Method Not Allowed' });
   }
 }
