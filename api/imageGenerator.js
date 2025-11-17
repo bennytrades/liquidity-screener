@@ -1,5 +1,6 @@
-// Image Generation Service for Discord Cards
-import puppeteer from 'puppeteer';
+// Serverless-Optimized Image Generation Service for Discord Cards
+import puppeteer from 'puppeteer-core';
+import chromium from '@sparticuz/chromium';
 import { generateDiscordCardHTML } from './discordCardGenerator.js';
 
 class DiscordImageGenerator {
@@ -9,18 +10,22 @@ class DiscordImageGenerator {
 
   async initialize() {
     if (!this.browser) {
-      this.browser = await puppeteer.launch({
-        headless: true,
+      // Configure for serverless environment
+      const options = {
         args: [
+          ...chromium.args,
+          '--hide-scrollbars',
+          '--disable-web-security',
           '--no-sandbox',
-          '--disable-setuid-sandbox',
-          '--disable-dev-shm-usage',
-          '--disable-accelerated-2d-canvas',
-          '--no-first-run',
-          '--no-zygote',
-          '--disable-gpu'
-        ]
-      });
+          '--disable-setuid-sandbox'
+        ],
+        defaultViewport: chromium.defaultViewport,
+        executablePath: await chromium.executablePath(),
+        headless: chromium.headless,
+        ignoreHTTPSErrors: true,
+      };
+
+      this.browser = await puppeteer.launch(options);
     }
   }
 
@@ -42,7 +47,8 @@ class DiscordImageGenerator {
       
       // Set the HTML content
       await page.setContent(cardHTML, {
-        waitUntil: 'networkidle0'
+        waitUntil: 'networkidle0',
+        timeout: 10000
       });
 
       // Take screenshot of the card
