@@ -1,8 +1,8 @@
-// ✅ Enhanced Webhook API with Discord Image Generation
+// ✅ Canvas-Based Webhook API (No Puppeteer needed!)
 import admin from 'firebase-admin';
 import FormData from 'form-data';
 import fetch from 'node-fetch';
-import { generateDiscordCardImage } from './imageGenerator.js';
+import { generateDiscordCardImage } from './canvasImageGenerator.js';
 
 // ✅ Initialize Firebase Admin SDK if not already initialized
 if (!admin.apps.length) {
@@ -29,7 +29,7 @@ const getNewYorkTimeString = () => {
   return formatter.format(now).toLowerCase(); // e.g. "9:05 pm"
 };
 
-// ✅ Enhanced Discord Alert Function with Image
+// ✅ Enhanced Discord Alert Function with Canvas Image
 const sendDiscordImageAlert = async (name, level, timestamp) => {
   const webhookUrl = process.env.DISCORD_WEBHOOK_URL;
 
@@ -39,9 +39,9 @@ const sendDiscordImageAlert = async (name, level, timestamp) => {
   }
 
   try {
-    console.log('🎨 Generating card image for Discord...');
+    console.log('🎨 Generating card image with Canvas...');
     
-    // Generate the beautiful card image
+    // Generate the beautiful card image using Canvas (no browser needed!)
     const imageBuffer = await generateDiscordCardImage({
       name,
       level,
@@ -173,13 +173,13 @@ export default async function handler(req, res) {
     // Get the actual timestamp for image generation
     const timestamp = Date.now();
 
-    // Send enhanced Discord alert with beautiful card image
+    // Send enhanced Discord alert with beautiful Canvas-generated image
     await sendDiscordImageAlert(name, level, timestamp);
 
     return res.status(200).json({ 
       success: true, 
       id: docRef.id,
-      message: 'Alert processed and image sent to Discord'
+      message: 'Alert processed and Canvas image sent to Discord'
     });
     
   } catch (error) {
