@@ -16,7 +16,8 @@
   "devDependencies": {
     "firebase-admin": "^12.6.0",
     "node-fetch": "^3.3.2",
-    "puppeteer": "^23.5.0",
+    "puppeteer-core": "^22.6.5",
+    "@sparticuz/chromium": "^126.0.0",
     "form-data": "^4.0.1"
   },
   "scripts": {
