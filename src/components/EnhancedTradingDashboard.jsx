@@ -76,15 +76,16 @@ export default function EnhancedTradingDashboard() {
     }
   };
 
-  // Get current NY time
-  const getNYTime = () => {
-    const now = new Date();
+  // Convert alert timestamp to NY time (FIXED!)
+  const getAlertNYTime = (timestamp) => {
+    const alertDate = new Date(timestamp);
     const nyTime = new Intl.DateTimeFormat("en-US", {
       timeZone: "America/New_York",
       hour: "2-digit",
       minute: "2-digit",
+      second: "2-digit",
       hour12: true
-    }).format(now);
+    }).format(alertDate);
     return nyTime;
   };
 
@@ -228,7 +229,7 @@ export default function EnhancedTradingDashboard() {
                 ✕
               </button>
 
-              {/* NY Time - Top Left */}
+              {/* Alert Creation NY Time - Top Left (FIXED!) */}
               <div style={{
                 position: "absolute",
                 top: "16px",
@@ -241,7 +242,7 @@ export default function EnhancedTradingDashboard() {
                 borderRadius: "6px",
                 border: "1px solid rgba(245, 158, 11, 0.3)"
               }}>
-                🕐 NY: {getNYTime()}
+                🕐 NY: {getAlertNYTime(alert.timestamp)}
               </div>
 
               {/* Ticker Name - Center */}
