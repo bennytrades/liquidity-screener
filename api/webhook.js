@@ -17,7 +17,7 @@ if (!admin.apps.length) {
 const db = admin.firestore();
 
 // ✅ Discord Alert Function
-const sendDiscordAlert = async (name, level, exchange) => {
+const sendDiscordAlert = async (name, level, time) => {
   // Get the Discord Webhook URL from environment variables
   const webhookUrl = process.env.DISCORD_WEBHOOK_URL;
 
@@ -25,7 +25,9 @@ const sendDiscordAlert = async (name, level, exchange) => {
   const message = {
     content: `**Critical Level Hit**\n\n` +
              `Pair:** ${name}**\n` +
-             `Level:** ${level}**\n`,
+             `Level:** ${level}**\n` +
+             `Time Now (NY):** ${time}**`,
+            ,
   };
 
   try {
@@ -47,13 +49,13 @@ export default async function handler(req, res) {
   // Only accept POST requests (reject GET, PUT, etc.)
   if (req.method === 'POST') {
     // Extract values from the incoming webhook request body
-    const { name, level, exchange } = req.body;
+    const { name, level, time } = req.body;
 
     // Validate required fields are present
-    if (!name || !level || !exchange) {
+    if (!name || !level || !time) {
       return res.status(400).json({ 
         success: false, 
-        message: 'Missing name, level, or exchange.' 
+        message: 'Missing name, level, or time.' 
       });
     }
 
@@ -62,12 +64,12 @@ export default async function handler(req, res) {
       const docRef = await db.collection('webhooks').add({
         name,
         level,
-        exchange, // Use lowercase to keep it consistent
+        time, // Use lowercase to keep it consistent
         timestamp: admin.firestore.FieldValue.serverTimestamp(), // Firestore server timestamp
       });
 
       // After saving, trigger the Discord alert
-      await sendDiscordAlert(name, level, exchange);
+      await sendDiscordAlert(name, level, time);
 
       // Respond to TradingView confirming success and return Firestore document ID
       return res.status(200).json({ success: true, id: docRef.id });
