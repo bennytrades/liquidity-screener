@@ -1,12 +1,13 @@
 import React from 'react';
-import ScreenerDashboard from './components/ScreenerDashboard';
+   import EnhancedTradingDashboard from './components/EnhancedTradingDashboard';
+   import './App.css';
 
-function App() {
-  return (
-    <div className="App">
-      <ScreenerDashboard />
-    </div>
-  );
-}
+   function App() {
+     return (
+       <div className="App">
+         <EnhancedTradingDashboard />
+       </div>
+     );
+   }
 
-export default App;
+   export default App;
