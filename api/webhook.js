@@ -27,7 +27,7 @@ const sendDiscordAlert = async (name, level, time) => {
              `Pair:** ${name}**\n` +
              `Level:** ${level}**\n` +
              `Time Now (NY):** ${time}**`,
-            ,
+            
   };
 
   try {
