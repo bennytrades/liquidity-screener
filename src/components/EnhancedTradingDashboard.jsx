@@ -12,6 +12,8 @@ const levelColors = {
   "1H LVL": "#f97316",
   "4H LVL": "#84cc16",
   "GAP FILLED": "#3b82f6",
+  "LONDON HIGH": "#6b7280",
+  "LONDON LOW": "#6b7280",
   UNKNOWN: "#6b7280",
 };
 
@@ -32,7 +34,6 @@ export default function EnhancedTradingDashboard() {
           id: docItem.id,
           name: data.name,
           level: data.level,
-          exchange: data.exchange || "Unknown",
           timestamp,
         });
       });
@@ -73,6 +74,18 @@ export default function EnhancedTradingDashboard() {
     } else {
       return hours + "h " + minutes + "m";
     }
+  };
+
+  // Get current NY time
+  const getNYTime = () => {
+    const now = new Date();
+    const nyTime = new Intl.DateTimeFormat("en-US", {
+      timeZone: "America/New_York",
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: true
+    }).format(now);
+    return nyTime;
   };
 
   const containerStyle = {
@@ -167,11 +180,11 @@ export default function EnhancedTradingDashboard() {
       <div style={headerStyle}>
         <h1 style={titleStyle}>💎 LIQUIDITY TERMINAL 💎</h1>
         <p style={{fontSize: "18px", color: "#94a3b8", fontWeight: "500", marginBottom: "20px"}}>
-          Real-time crypto liquidity monitoring & alerts
+          Real-time US FUTURES liquidity monitoring & alerts
         </p>
         <div style={{display: "flex", justifyContent: "center", gap: "30px", fontSize: "14px", color: "#64748b"}}>
           <div>📊 Total Alerts: <span style={{color: "#3b82f6", fontWeight: "700"}}>{alerts.length}</span></div>
-          <div>🔥 Active Markets: <span style={{color: "#10b981", fontWeight: "700"}}>{new Set(alerts.map(a => a.exchange)).size}</span></div>
+          <div>🔥 Active Markets: <span style={{color: "#10b981", fontWeight: "700"}}>{alerts.length}</span></div>
           <div>⏱️ Live Updates: <span style={{color: "#f59e0b", fontWeight: "700"}}>ON</span></div>
         </div>
       </div>
@@ -192,6 +205,7 @@ export default function EnhancedTradingDashboard() {
 
           return (
             <div key={alert.id} className="alert-card" style={cardStyle}>
+              {/* Delete Button - Top Right */}
               <button
                 onClick={() => handleDelete(alert.id)}
                 style={{
@@ -214,11 +228,27 @@ export default function EnhancedTradingDashboard() {
                 ✕
               </button>
 
+              {/* NY Time - Top Left */}
               <div style={{
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-                marginBottom: "20px"
+                position: "absolute",
+                top: "16px",
+                left: "16px",
+                fontSize: "12px",
+                fontWeight: "600",
+                color: "#f59e0b",
+                background: "rgba(245, 158, 11, 0.1)",
+                padding: "4px 8px",
+                borderRadius: "6px",
+                border: "1px solid rgba(245, 158, 11, 0.3)"
+              }}>
+                🕐 NY: {getNYTime()}
+              </div>
+
+              {/* Ticker Name - Center */}
+              <div style={{
+                textAlign: "center",
+                marginTop: "50px",
+                marginBottom: "30px"
               }}>
                 <div style={{
                   fontSize: "32px",
@@ -227,35 +257,30 @@ export default function EnhancedTradingDashboard() {
                 }}>
                   {alert.name}
                 </div>
+              </div>
+
+              {/* Level Badge - Center */}
+              <div style={{
+                textAlign: "center",
+                marginBottom: "20px"
+              }}>
                 <div style={{
-                  fontSize: "16px",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "8px",
+                  padding: "12px 20px",
+                  borderRadius: "12px",
+                  backgroundColor: levelColor,
+                  color: "#ffffff",
+                  fontSize: "14px",
                   fontWeight: "700",
-                  color: "#3b82f6",
-                  background: "rgba(59, 130, 246, 0.1)",
-                  padding: "4px 12px",
-                  borderRadius: "8px",
-                  border: "1px solid rgba(59, 130, 246, 0.3)"
+                  textTransform: "uppercase"
                 }}>
-                  {alert.exchange}
+                  {alert.level}
                 </div>
               </div>
 
-              <div style={{
-                display: "inline-flex",
-                alignItems: "center",
-                gap: "8px",
-                padding: "12px 20px",
-                borderRadius: "12px",
-                backgroundColor: levelColor,
-                color: "#ffffff",
-                fontSize: "14px",
-                fontWeight: "700",
-                textTransform: "uppercase",
-                marginBottom: "16px"
-              }}>
-                {alert.level}
-              </div>
-
+              {/* Timer and Live Signal - Bottom */}
               <div style={{
                 display: "flex",
                 alignItems: "center",
