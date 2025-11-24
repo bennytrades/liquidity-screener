@@ -39,25 +39,18 @@ const formatNYTimestamp = (timestamp) => {
 };
 
 /**
- * Get level emoji and color
+ * Get ticker color and emoji
  */
-const getLevelConfig = (level) => {
-  const configs = {
-    "ASIA HIGH": { emoji: "🟠", color: 0xf97316 },
-    "ASIA LOW": { emoji: "🟠", color: 0xf97316 },
-    "ASIA H": { emoji: "🟠", color: 0xf97316 },
-    "ASIA L": { emoji: "🟠", color: 0xf97316 },
-    "LONDON HIGH": { emoji: "🔴", color: 0xef4444 },
-    "LONDON LOW": { emoji: "🔴", color: 0xef4444 },
-    "LONDON H": { emoji: "🔴", color: 0xef4444 },
-    "LONDON L": { emoji: "🔴", color: 0xef4444 },
-    PDH: { emoji: "⚪", color: 0x6b7280 },
-    PDL: { emoji: "⚪", color: 0x6b7280 },
-    PWH: { emoji: "🟢", color: 0x10b981 },
-    PWL: { emoji: "🟢", color: 0x10b981 },
-  };
-
-  return configs[level] || { emoji: "⚪", color: 0x6b7280 };
+const getTickerConfig = (name) => {
+  // Check ticker name for NQ or ES
+  if (name.toUpperCase().includes("NQ")) {
+    return { emoji: "🔵", color: 0x3b82f6 }; // Blue
+  } else if (name.toUpperCase().includes("ES")) {
+    return { emoji: "🔴", color: 0xef4444 }; // Red
+  }
+  
+  // Default color
+  return { emoji: "⚪", color: 0x6b7280 }; // Grey
 };
 
 /**
@@ -71,7 +64,7 @@ const sendDiscordTextAlert = async (alertData) => {
 
   try {
     const { name, level, exchange, timestamp } = alertData;
-    const { emoji, color } = getLevelConfig(level);
+    const { emoji, color } = getTickerConfig(name);
     const nyTime = formatNYTimestamp(timestamp);
 
     // Build description with optional exchange
