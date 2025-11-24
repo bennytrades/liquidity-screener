@@ -56,7 +56,7 @@ export default function EnhancedTradingDashboard() {
       const fetchedAlerts = [];
       querySnapshot.forEach((docItem) => {
         const data = docItem.data();
-        const timestamp = data.timestamp?.seconds ? data.timestamp.seconds * 1000 : Date.now();
+        const timestamp = typeof data.timestamp === "number" ? data.timestamp : (data.timestamp?.seconds ? data.timestamp.seconds * 1000 : Date.now());
 
         fetchedAlerts.push({
           id: docItem.id,
