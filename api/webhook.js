@@ -74,10 +74,16 @@ const sendDiscordTextAlert = async (alertData) => {
     const { emoji, color } = getLevelConfig(level);
     const nyTime = formatNYTimestamp(timestamp);
 
+    // Build description with optional exchange
+    let description = `**Level:** ${level}\n**Time:** ${nyTime}`;
+    if (exchange && exchange !== "N/A") {
+      description = `**Exchange:** ${exchange}\n${description}`;
+    }
+
     // Create clean Discord embed
     const embed = {
       title: `${emoji} ${name} HIT ${level}`,
-      description: `**Exchange:** ${exchange}\n**Level:** ${level}\n**Time:** ${nyTime}`,
+      description: description,
       color: color,
       timestamp: new Date(timestamp).toISOString(),
       footer: {
@@ -120,17 +126,18 @@ export default async function handler(req, res) {
     // Extract alert data from TradingView webhook
     const { name, level, exchange } = req.body;
 
-    if (!name || !level || !exchange) {
+    // Only name and level are required
+    if (!name || !level) {
       return res.status(400).json({
-        error: "Missing required fields: name, level, exchange",
+        error: "Missing required fields: name, level",
       });
     }
 
-    // Create alert object
+    // Create alert object (exchange is optional)
     const alertData = {
       name: name.trim(),
       level: level.trim(),
-      exchange: exchange.trim(),
+      exchange: exchange ? exchange.trim() : "N/A",
       timestamp: Date.now(),
     };
 
