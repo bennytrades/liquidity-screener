@@ -51,7 +51,7 @@ export default function EnhancedTradingDashboard() {
   const [currentTime, setCurrentTime] = useState(Date.now());
 
   useEffect(() => {
-    const q = query(collection(db, "webhooks"), orderBy("timestamp", "desc"));
+    const q = query(collection(db, "alerts"), orderBy("timestamp", "desc"));
     const unsubscribe = onSnapshot(q, (querySnapshot) => {
       const fetchedAlerts = [];
       querySnapshot.forEach((docItem) => {
@@ -82,7 +82,7 @@ export default function EnhancedTradingDashboard() {
 
   const handleDelete = async (id) => {
     try {
-      await deleteDoc(doc(db, "webhooks", id));
+      await deleteDoc(doc(db, "alerts", id));
       console.log("Deleted alert with ID:", id);
     } catch (error) {
       console.error("Error deleting document:", error);
