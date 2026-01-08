@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { db } from "../firebaseConfig";
+import { db } from "../vite-env";
 import { collection, query, orderBy, onSnapshot, deleteDoc, doc } from "firebase/firestore";
 
 // Level-specific background colors
