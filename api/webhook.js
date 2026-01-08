@@ -39,6 +39,155 @@ const formatNYTimestamp = (timestamp) => {
 };
 
 /**
+ * Get current trading day window (18:00 yesterday to 16:00 today in NY time)
+ * Returns { start: timestamp, end: timestamp }
+ */
+const getTradingDayWindow = () => {
+  // Get current time in NY timezone
+  const now = new Date();
+  const nyTimeString = now.toLocaleString("en-US", { timeZone: "America/New_York" });
+  const nyNow = new Date(nyTimeString);
+  
+  const currentHour = nyNow.getHours();
+  
+  // If before 16:00 (4 PM), trading day started yesterday at 18:00
+  // If after 16:00 (4 PM), trading day started today at 18:00
+  let tradingDayStart;
+  if (currentHour < 16) {
+    // Before 4 PM - trading day started yesterday at 18:00
+    tradingDayStart = new Date(nyNow);
+    tradingDayStart.setDate(tradingDayStart.getDate() - 1);
+    tradingDayStart.setHours(18, 0, 0, 0);
+  } else {
+    // After 4 PM - trading day started today at 18:00
+    tradingDayStart = new Date(nyNow);
+    tradingDayStart.setHours(18, 0, 0, 0);
+  }
+  
+  // Trading day ends 22 hours after start (at 16:00 next day)
+  const tradingDayEnd = new Date(tradingDayStart);
+  tradingDayEnd.setHours(tradingDayEnd.getHours() + 22);
+  
+  return {
+    start: tradingDayStart.getTime(),
+    end: tradingDayEnd.getTime()
+  };
+};
+
+/**
+ * Normalize level name to consistent format
+ * Maps various level formats to standard names
+ */
+const normalizeLevelName = (level) => {
+  const normalized = level.toUpperCase().trim();
+  
+  // Map variations to standard names
+  const levelMap = {
+    'PDH': 'PDH',
+    'PREVIOUS DAY HIGH': 'PDH',
+    'PREV DAY HIGH': 'PDH',
+    
+    'PDL': 'PDL',
+    'PREVIOUS DAY LOW': 'PDL',
+    'PREV DAY LOW': 'PDL',
+    
+    'ASIA HIGH': 'ASIA_HIGH',
+    'AS.H': 'ASIA_HIGH',
+    'AS H': 'ASIA_HIGH',
+    'ASH': 'ASIA_HIGH',
+    'ASIAN HIGH': 'ASIA_HIGH',
+    
+    'ASIA LOW': 'ASIA_LOW',
+    'AS.L': 'ASIA_LOW',
+    'AS L': 'ASIA_LOW',
+    'ASL': 'ASIA_LOW',
+    'ASIAN LOW': 'ASIA_LOW',
+    
+    'LONDON HIGH': 'LONDON_HIGH',
+    'LON.H': 'LONDON_HIGH',
+    'LON H': 'LONDON_HIGH',
+    'LONH': 'LONDON_HIGH',
+    
+    'LONDON LOW': 'LONDON_LOW',
+    'LON.L': 'LONDON_LOW',
+    'LON L': 'LONDON_LOW',
+    'LONL': 'LONDON_LOW',
+    
+    // PWH and PWL - not filtered yet
+    'PWH': 'PWH',
+    'PREVIOUS WEEK HIGH': 'PWH',
+    
+    'PWL': 'PWL',
+    'PREVIOUS WEEK LOW': 'PWL',
+  };
+  
+  return levelMap[normalized] || normalized;
+};
+
+/**
+ * Check if Discord alert was already sent for this level in current trading day
+ */
+const wasDiscordAlertSent = async (level) => {
+  const normalizedLevel = normalizeLevelName(level);
+  const { start, end } = getTradingDayWindow();
+  
+  console.log(`📊 Checking Discord alert history for ${normalizedLevel}`);
+  console.log(`   Trading day window: ${new Date(start).toLocaleString()} to ${new Date(end).toLocaleString()}`);
+  
+  try {
+    // Query discord_alerts collection for this level in current trading day
+    const snapshot = await db.collection('discord_alerts')
+      .where('level', '==', normalizedLevel)
+      .where('timestamp', '>=', start)
+      .where('timestamp', '<=', end)
+      .limit(1)
+      .get();
+    
+    const alreadySent = !snapshot.empty;
+    
+    if (alreadySent) {
+      const existingAlert = snapshot.docs[0].data();
+      console.log(`⏭️  Discord alert already sent for ${normalizedLevel} at ${formatNYTimestamp(existingAlert.timestamp)}`);
+    } else {
+      console.log(`✅ No Discord alert sent yet for ${normalizedLevel} in this trading day`);
+    }
+    
+    return alreadySent;
+  } catch (error) {
+    console.error('❌ Error checking Discord alert history:', error);
+    // If error, allow the alert to be sent (fail open)
+    return false;
+  }
+};
+
+/**
+ * Record that Discord alert was sent for this level
+ */
+const recordDiscordAlert = async (level, timestamp) => {
+  const normalizedLevel = normalizeLevelName(level);
+  
+  try {
+    await db.collection('discord_alerts').add({
+      level: normalizedLevel,
+      timestamp: timestamp,
+      sentAt: Date.now(),
+    });
+    console.log(`📝 Recorded Discord alert for ${normalizedLevel}`);
+  } catch (error) {
+    console.error('❌ Error recording Discord alert:', error);
+  }
+};
+
+/**
+ * Check if level should be rate limited (PDH, PDL, ASIA, LONDON)
+ */
+const shouldRateLimitLevel = (level) => {
+  const normalizedLevel = normalizeLevelName(level);
+  const rateLimitedLevels = ['PDH', 'PDL', 'ASIA_HIGH', 'ASIA_LOW', 'LONDON_HIGH', 'LONDON_LOW'];
+  return rateLimitedLevels.includes(normalizedLevel);
+};
+
+/**
  * Get ticker color and emoji
  */
 const getTickerConfig = (name) => {
@@ -59,7 +208,7 @@ const getTickerConfig = (name) => {
 const sendDiscordTextAlert = async (alertData) => {
   if (!DISCORD_WEBHOOK_URL) {
     console.log("⚠️ Discord webhook URL not configured");
-    return;
+    return false;
   }
 
   try {
@@ -98,14 +247,15 @@ const sendDiscordTextAlert = async (alertData) => {
     }
 
     console.log("✅ Discord text alert sent successfully!");
+    return true;
   } catch (error) {
     console.error("❌ Discord alert failed:", error.message);
-    throw error;
+    return false;
   }
 };
 
 /**
- * Main Webhook Handler (Clean Text Only)
+ * Main Webhook Handler with Discord Rate Limiting
  */
 export default async function handler(req, res) {
   // Only allow POST requests
@@ -136,12 +286,35 @@ export default async function handler(req, res) {
 
     console.log("📊 Processing alert:", alertData);
 
-    // Save to Firestore
+    // ALWAYS save to Firestore (no rate limiting on database)
     const docRef = await db.collection("alerts").add(alertData);
     console.log("✅ Alert saved to Firestore:", docRef.id);
 
-    // Send text-only Discord notification
-    await sendDiscordTextAlert(alertData);
+    // Check if this level should be rate limited
+    const shouldLimit = shouldRateLimitLevel(alertData.level);
+    
+    let discordSent = false;
+    let discordSkipped = false;
+    
+    if (shouldLimit) {
+      // Check if Discord alert was already sent for this level today
+      const alreadySent = await wasDiscordAlertSent(alertData.level);
+      
+      if (alreadySent) {
+        console.log(`⏭️  Skipping Discord alert - ${alertData.level} already sent in this trading day`);
+        discordSkipped = true;
+      } else {
+        // Send Discord alert and record it
+        discordSent = await sendDiscordTextAlert(alertData);
+        if (discordSent) {
+          await recordDiscordAlert(alertData.level, alertData.timestamp);
+        }
+      }
+    } else {
+      // Not rate limited (e.g., PWH, PWL) - always send
+      console.log(`📢 Level ${alertData.level} not rate limited - sending to Discord`);
+      discordSent = await sendDiscordTextAlert(alertData);
+    }
 
     // Success response
     return res.status(200).json({
@@ -149,6 +322,11 @@ export default async function handler(req, res) {
       message: "Alert processed successfully",
       id: docRef.id,
       alert: alertData,
+      discord: {
+        sent: discordSent,
+        skipped: discordSkipped,
+        rateLimited: shouldLimit,
+      }
     });
   } catch (error) {
     console.error("❌ Webhook error:", error);
