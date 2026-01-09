@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { db } from "../firebaseConfig";
-import { collection, query, orderBy, onSnapshot, deleteDoc, doc } from "firebase/firestore";
+import { collection, query, orderBy, onSnapshot, deleteDoc, doc, where, getDocs } from "firebase/firestore";
 
 // Level-specific background colors
 const levelBackgrounds = {
@@ -41,8 +41,63 @@ const levelColors = {
 
 // Trading symbols
 const tradingSymbols = {
-  "ES": "data:image/png;base64,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",
+  "ES": "data:image/png;base64,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.jsx",
   "NQ": "https://s3-symbol-logo.tradingview.com/indices/nasdaq-100--600.png"
+};
+
+/**
+ * Normalize ticker name to match backend logic
+ */
+const normalizeTickerName = (name) => {
+  const normalized = name.toUpperCase().trim();
+  const baseSymbol = normalized
+    .replace(/1!/g, '')
+    .replace(/USD$/g, '')
+    .replace(/[HMUZ]\d{2}$/g, '')
+    .replace(/\d+$/g, '')
+    .trim();
+  
+  const symbolMap = {
+    'ES': 'ES',
+    'NQ': 'NQ',
+  };
+  
+  return symbolMap[baseSymbol] || baseSymbol;
+};
+
+/**
+ * Normalize level name to match backend logic
+ */
+const normalizeLevelName = (level) => {
+  const normalized = level.toUpperCase().trim();
+  
+  const levelMap = {
+    'PDH': 'PDH',
+    'PREVIOUS DAY HIGH': 'PDH',
+    'PDL': 'PDL',
+    'PREVIOUS DAY LOW': 'PDL',
+    'ASIA HIGH': 'ASIA_HIGH',
+    'AS.H': 'ASIA_HIGH',
+    'ASIA LOW': 'ASIA_LOW',
+    'AS.L': 'ASIA_LOW',
+    'LONDON HIGH': 'LONDON_HIGH',
+    'LON.H': 'LONDON_HIGH',
+    'LONDON LOW': 'LONDON_LOW',
+    'LON.L': 'LONDON_LOW',
+    'PWH': 'PWH',
+    'PWL': 'PWL',
+  };
+  
+  return levelMap[normalized] || normalized;
+};
+
+/**
+ * Create alert key to match backend
+ */
+const createAlertKey = (ticker, level) => {
+  const normalizedTicker = normalizeTickerName(ticker);
+  const normalizedLevel = normalizeLevelName(level);
+  return `${normalizedTicker}_${normalizedLevel}`;
 };
 
 export default function EnhancedTradingDashboard() {
@@ -80,12 +135,38 @@ export default function EnhancedTradingDashboard() {
     return () => clearInterval(interval);
   }, []);
 
-  const handleDelete = async (id) => {
+  /**
+   * Enhanced delete handler:
+   * 1. Deletes the alert card (existing behavior)
+   * 2. Resets Discord rate limiting for this ticker + level
+   */
+  const handleDelete = async (id, name, level) => {
     try {
+      // Step 1: Delete the alert card
       await deleteDoc(doc(db, "alerts", id));
-      console.log("Deleted alert with ID:", id);
+      console.log("✅ Deleted alert card with ID:", id);
+
+      // Step 2: Reset Discord rate limiting by deleting matching discord_alerts
+      const alertKey = createAlertKey(name, level);
+      console.log(`🔄 Resetting Discord rate limit for: ${alertKey}`);
+
+      // Query discord_alerts for this specific ticker + level combination
+      const discordAlertsRef = collection(db, "discord_alerts");
+      const q = query(discordAlertsRef, where("alertKey", "==", alertKey));
+      const snapshot = await getDocs(q);
+
+      if (!snapshot.empty) {
+        // Delete all matching discord_alerts documents
+        const deletePromises = snapshot.docs.map(doc => deleteDoc(doc.ref));
+        await Promise.all(deletePromises);
+        console.log(`✅ Reset complete: Deleted ${snapshot.size} discord_alert(s) for ${alertKey}`);
+        console.log(`💬 Discord can now send alerts for ${alertKey} again!`);
+      } else {
+        console.log(`ℹ️  No discord_alerts found for ${alertKey} (already reset or never sent)`);
+      }
+
     } catch (error) {
-      console.error("Error deleting document:", error);
+      console.error("❌ Error in handleDelete:", error);
     }
   };
 
@@ -135,56 +216,34 @@ export default function EnhancedTradingDashboard() {
   const containerStyle = {
     background: "linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #334155 100%)",
     minHeight: "100vh",
-    padding: "24px",
-    fontFamily: "Inter, sans-serif",
-    color: "#f8fafc"
+    padding: "40px 20px",
   };
 
   const headerStyle = {
     textAlign: "center",
     marginBottom: "40px",
-    background: "linear-gradient(135deg, #1e293b 0%, #334155 100%)",
-    borderRadius: "20px",
-    padding: "30px",
-    border: "1px solid #475569",
-    boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.5)"
   };
 
   const titleStyle = {
-    fontSize: "48px",
-    fontWeight: "800",
-    background: "linear-gradient(135deg, #3b82f6 0%, #06b6d4 50%, #8b5cf6 100%)",
-    WebkitBackgroundClip: "text",
-    WebkitTextFillColor: "transparent",
-    marginBottom: "16px"
+    fontSize: "42px",
+    fontWeight: "900",
+    color: "#ffffff",
+    marginBottom: "10px",
+    textShadow: "0 0 20px rgba(59, 130, 246, 0.5)",
   };
 
   const gridStyle = {
     display: "grid",
-    gridTemplateColumns: "repeat(auto-fit, minmax(400px, 1fr))",
+    gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))",
     gap: "24px",
     maxWidth: "1400px",
     margin: "0 auto",
-    width: "100%"
   };
 
   if (loading) {
     return (
-      <div style={containerStyle}>
-        <div style={{textAlign: "center", paddingTop: "50px"}}>
-          <div style={{
-            width: "60px",
-            height: "60px",
-            border: "4px solid #1f2937",
-            borderTop: "4px solid #3b82f6",
-            borderRadius: "50%",
-            animation: "spin 1s linear infinite",
-            margin: "0 auto"
-          }}></div>
-          <p style={{marginTop: "20px", color: "#9ca3af", fontSize: "18px"}}>
-            Loading Market Data...
-          </p>
-        </div>
+      <div style={{...containerStyle, display: "flex", justifyContent: "center", alignItems: "center"}}>
+        <div style={{fontSize: "24px", color: "#fff"}}>Loading alerts...</div>
       </div>
     );
   }
@@ -192,15 +251,40 @@ export default function EnhancedTradingDashboard() {
   if (alerts.length === 0) {
     return (
       <div style={containerStyle}>
+        <style>{`
+          @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+          }
+        `}</style>
         <div style={headerStyle}>
           <h1 style={titleStyle}>💎 LIQUIDITY TERMINAL 💎</h1>
+          <p style={{fontSize: "18px", color: "#94a3b8", fontWeight: "500"}}>
+            Real-time US FUTURES liquidity monitoring & alerts
+          </p>
         </div>
-        <div style={{textAlign: "center", padding: "60px 20px", color: "#9ca3af"}}>
-          <div style={{fontSize: "64px", marginBottom: "20px"}}>📊</div>
-          <h3 style={{fontSize: "24px", fontWeight: "600", color: "#f3f4f6"}}>
+        <div style={{
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "center",
+          minHeight: "400px",
+          background: "linear-gradient(135deg, #1e293b 0%, #334155 100%)",
+          borderRadius: "20px",
+          border: "2px solid rgba(255, 255, 255, 0.1)",
+          maxWidth: "500px",
+          margin: "0 auto",
+          padding: "40px"
+        }}>
+          <div style={{fontSize: "64px", marginBottom: "20px", animation: "pulse 2s ease-in-out infinite"}}>
+            📊
+          </div>
+          <h2 style={{fontSize: "28px", color: "#fff", marginBottom: "10px", textAlign: "center"}}>
             No Active Signals
-          </h3>
-          <p>Waiting for liquidity events...</p>
+          </h2>
+          <p style={{fontSize: "16px", color: "#94a3b8", textAlign: "center"}}>
+            Waiting for liquidity events...
+          </p>
         </div>
       </div>
     );
@@ -209,9 +293,9 @@ export default function EnhancedTradingDashboard() {
   return (
     <div style={containerStyle}>
       <style>{`
-        @keyframes spin {
-          0% { transform: rotate(0deg); }
-          100% { transform: rotate(360deg); }
+        @keyframes rotate {
+          from { transform: rotate(0deg); }
+          to { transform: rotate(360deg); }
         }
         .alert-card {
           transition: all 0.3s ease;
@@ -253,7 +337,8 @@ export default function EnhancedTradingDashboard() {
             <div key={alert.id} className="alert-card" style={cardStyle}>
               {/* Delete Button - Top Right */}
               <button
-                onClick={() => handleDelete(alert.id)}
+                onClick={() => handleDelete(alert.id, alert.name, alert.level)}
+                title="Close alert and allow Discord re-send"
                 style={{
                   position: "absolute",
                   top: "16px",
