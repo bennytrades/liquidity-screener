@@ -75,6 +75,39 @@ const getTradingDayWindow = () => {
 };
 
 /**
+ * Normalize ticker name to base symbol
+ * ES1!, ESUSD, ES, ESH24 → ES
+ * NQ1!, NQUSD, NQ, NQH24 → NQ
+ */
+const normalizeTickerName = (name) => {
+  const normalized = name.toUpperCase().trim();
+  
+  // Extract base symbol (ES, NQ, etc.)
+  // Remove common suffixes: 1!, USD, H24, M24, U24, Z24, etc.
+  const baseSymbol = normalized
+    .replace(/1!/g, '')      // Remove 1!
+    .replace(/USD$/g, '')    // Remove USD at end
+    .replace(/[HMUZ]\d{2}$/g, '') // Remove contract months (H24, M24, etc.)
+    .replace(/\d+$/g, '')    // Remove trailing numbers
+    .trim();
+  
+  // Map common variations
+  const symbolMap = {
+    'ES': 'ES',
+    'E-MINI S&P': 'ES',
+    'EMINI S&P': 'ES',
+    'SPX': 'ES',
+    
+    'NQ': 'NQ',
+    'E-MINI NASDAQ': 'NQ',
+    'EMINI NASDAQ': 'NQ',
+    'NDX': 'NQ',
+  };
+  
+  return symbolMap[baseSymbol] || baseSymbol;
+};
+
+/**
  * Normalize level name to consistent format
  * Maps various level formats to standard names
  */
@@ -125,19 +158,28 @@ const normalizeLevelName = (level) => {
 };
 
 /**
- * Check if Discord alert was already sent for this level in current trading day
+ * Create unique key for ticker + level combination
  */
-const wasDiscordAlertSent = async (level) => {
+const createAlertKey = (ticker, level) => {
+  const normalizedTicker = normalizeTickerName(ticker);
   const normalizedLevel = normalizeLevelName(level);
+  return `${normalizedTicker}_${normalizedLevel}`;
+};
+
+/**
+ * Check if Discord alert was already sent for this ticker + level in current trading day
+ */
+const wasDiscordAlertSent = async (ticker, level) => {
+  const alertKey = createAlertKey(ticker, level);
   const { start, end } = getTradingDayWindow();
   
-  console.log(`📊 Checking Discord alert history for ${normalizedLevel}`);
+  console.log(`📊 Checking Discord alert history for ${alertKey}`);
   console.log(`   Trading day window: ${new Date(start).toLocaleString()} to ${new Date(end).toLocaleString()}`);
   
   try {
-    // Query discord_alerts collection for this level in current trading day
+    // Query discord_alerts collection for this ticker + level in current trading day
     const snapshot = await db.collection('discord_alerts')
-      .where('level', '==', normalizedLevel)
+      .where('alertKey', '==', alertKey)
       .where('timestamp', '>=', start)
       .where('timestamp', '<=', end)
       .limit(1)
@@ -147,9 +189,9 @@ const wasDiscordAlertSent = async (level) => {
     
     if (alreadySent) {
       const existingAlert = snapshot.docs[0].data();
-      console.log(`⏭️  Discord alert already sent for ${normalizedLevel} at ${formatNYTimestamp(existingAlert.timestamp)}`);
+      console.log(`⏭️  Discord alert already sent for ${alertKey} at ${formatNYTimestamp(existingAlert.timestamp)}`);
     } else {
-      console.log(`✅ No Discord alert sent yet for ${normalizedLevel} in this trading day`);
+      console.log(`✅ No Discord alert sent yet for ${alertKey} in this trading day`);
     }
     
     return alreadySent;
@@ -161,18 +203,22 @@ const wasDiscordAlertSent = async (level) => {
 };
 
 /**
- * Record that Discord alert was sent for this level
+ * Record that Discord alert was sent for this ticker + level
  */
-const recordDiscordAlert = async (level, timestamp) => {
+const recordDiscordAlert = async (ticker, level, timestamp) => {
+  const alertKey = createAlertKey(ticker, level);
+  const normalizedTicker = normalizeTickerName(ticker);
   const normalizedLevel = normalizeLevelName(level);
   
   try {
     await db.collection('discord_alerts').add({
-      level: normalizedLevel,
-      timestamp: timestamp,
-      sentAt: Date.now(),
+      alertKey: alertKey,           // Unique key: "ES_PDH"
+      ticker: normalizedTicker,     // "ES"
+      level: normalizedLevel,       // "PDH"
+      timestamp: timestamp,         // When alert occurred
+      sentAt: Date.now(),          // When Discord was sent
     });
-    console.log(`📝 Recorded Discord alert for ${normalizedLevel}`);
+    console.log(`📝 Recorded Discord alert for ${alertKey}`);
   } catch (error) {
     console.error('❌ Error recording Discord alert:', error);
   }
@@ -191,10 +237,12 @@ const shouldRateLimitLevel = (level) => {
  * Get ticker color and emoji
  */
 const getTickerConfig = (name) => {
+  const normalizedTicker = normalizeTickerName(name);
+  
   // Check ticker name for NQ or ES
-  if (name.toUpperCase().includes("NQ")) {
+  if (normalizedTicker === 'NQ') {
     return { emoji: "🔵", color: 0x3b82f6 }; // Blue
-  } else if (name.toUpperCase().includes("ES")) {
+  } else if (normalizedTicker === 'ES') {
     return { emoji: "🔴", color: 0xef4444 }; // Red
   }
   
@@ -297,17 +345,18 @@ export default async function handler(req, res) {
     let discordSkipped = false;
     
     if (shouldLimit) {
-      // Check if Discord alert was already sent for this level today
-      const alreadySent = await wasDiscordAlertSent(alertData.level);
+      // Check if Discord alert was already sent for this TICKER + LEVEL today
+      const alreadySent = await wasDiscordAlertSent(alertData.name, alertData.level);
       
       if (alreadySent) {
-        console.log(`⏭️  Skipping Discord alert - ${alertData.level} already sent in this trading day`);
+        const alertKey = createAlertKey(alertData.name, alertData.level);
+        console.log(`⏭️  Skipping Discord alert - ${alertKey} already sent in this trading day`);
         discordSkipped = true;
       } else {
         // Send Discord alert and record it
         discordSent = await sendDiscordTextAlert(alertData);
         if (discordSent) {
-          await recordDiscordAlert(alertData.level, alertData.timestamp);
+          await recordDiscordAlert(alertData.name, alertData.level, alertData.timestamp);
         }
       }
     } else {
@@ -326,6 +375,7 @@ export default async function handler(req, res) {
         sent: discordSent,
         skipped: discordSkipped,
         rateLimited: shouldLimit,
+        alertKey: shouldLimit ? createAlertKey(alertData.name, alertData.level) : null,
       }
     });
   } catch (error) {
